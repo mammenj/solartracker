@@ -1,0 +1,19 @@
+[project]
+name = "solartracker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "jsmammen", email = "jsmammen@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "bottle>=0.13.4",
+]
+
+[project.scripts]
+solartracker = "solartracker.main:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
