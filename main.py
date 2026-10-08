@@ -3,7 +3,7 @@ from pathlib import Path
 
 import bottle
 from bottle import Bottle, request, run, template
-from libsolar import MeterReading, SolarTracker
+from libsolar import MeterReading, SolarTracker, TotalsDict
 
 # Web App Setup
 app = Bottle()
@@ -28,7 +28,7 @@ tracker = SolarTracker(data_file)
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
     periods = tracker.get_periods()
-    totals = tracker.get_totals()
+    totals: TotalsDict = tracker.get_totals()
     return template("views/index.tpl", today=today, periods=periods, totals=totals)
 
 
@@ -58,7 +58,9 @@ def add_reading():
     )
 
     # Re-render the table partial using the template
-    rendered_table = template("table_partial.tpl", periods=tracker.get_periods())
+    rendered_table = template(
+        "table_partial.tpl", periods=tracker.get_periods(), totals=tracker.get_totals()
+    )
 
     return f"""
     <div class='alert-success'>{msg}</div>
