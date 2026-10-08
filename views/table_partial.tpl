@@ -17,7 +17,7 @@
             <tbody>
                 % for p in periods:
                 <tr>
-                    <td><strong>{{p.start.date.strftime('%d/%m/%Y')}} → {{p.end.date.strftime('%d/%m/%Y')}}</strong></td>
+                    <td>{{p.start.date.strftime('%d/%m/%Y')}}-{{p.end.date.strftime('%d/%m/%Y')}}</strong></td>
                     <td>{{p.days}} days</td>
                     <td>+{{f"{p.import_diff:.2f}"}} kWh</td>
                     <td>+{{f"{p.export_diff:.2f}"}} kWh</td>
@@ -34,7 +34,7 @@
                 % end
             </tbody>
             <tfoot>
-              <tr class="total-row">
+              <tr style="font-weight: bold;" >
                 <th>Total</th>
                 <th>{{ "%.2f" % totals['total_days']}}</th>
                 <th>{{ "%.2f" % totals['total_import']}}</th>

@@ -17,8 +17,4 @@ solartracker = "main:main"
 [tool.hatch.build.targets.wheel]
 packages = ["."]
 
-[dependency-groups]
-dev = [
-    "ruff>=0.16.10",
-]
 
