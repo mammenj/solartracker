@@ -152,6 +152,30 @@ class SolarTracker:
             ReadingPeriod(self.history[i - 1], self.history[i])
             for i in range(1, len(self.history))
         ]
+    def get_totals(self) -> Dict[str,float]:
+        periods = self.get_periods()
+        total_days = 0
+        total_consumption = 0
+        total_solar =0
+        total_import = 0
+        total_export = 0
+        total_balance =0
+        for p in periods:
+            total_days += p.days
+            total_import += p.import_diff
+            total_export += p.export_diff
+            total_solar += p.solar_yield
+            total_balance += p.net_balance
+            total_consumption += p.consumption
+
+        return{ 
+            "total_days": total_days,
+            "total_import": total_import,
+            "total_export":total_export,
+            "total_solar":total_solar,
+            "total_balance": total_balance,
+            "total_consumption": total_consumption,
+        }
 
 
 # Web App Setup
@@ -177,7 +201,8 @@ tracker = SolarTracker(data_file)
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
     periods = tracker.get_periods()
-    return template("views/index.tpl", today=today, periods=periods)
+    totals = tracker.get_totals()
+    return template("views/index.tpl", today=today, periods=periods, totals=totals)
 
 
 @app.post("/readings")

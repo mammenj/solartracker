@@ -33,6 +33,17 @@
                 </tr>
                 % end
             </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <th>Total</th>
+                <th>{{ "%.2f" % totals['total_days']}}</th>
+                <th>{{ "%.2f" % totals['total_import']}}</th>
+                <th>{{ "%.2f" % totals['total_export']}}</th>
+                <th>{{ "%.2f" % totals['total_solar']}}</th>
+                <th>{{ "%.2f" % totals['total_balance']}}</th>
+                <th>{{ "%.2f" % totals['total_consumption']}}</th>
+              </tr>
+            </tfoot>
         </table>
     </div>
 % end
