@@ -1,6 +1,6 @@
 version = 1
 revision = 5
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 
 [[package]]
 name = "bottle"
@@ -20,4 +20,4 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "bottle", specifier = ">=0.13.4" }]
+requires-dist = [{ name = "bottle", specifier = ">=0.12.25" }]
