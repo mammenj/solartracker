@@ -1,7 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-from bottle import Bottle, request, response, run
+
+from bottle import Bottle, request, run, template
+import bottle
+from bottle import Bottle, request, response, run, template
 
 
 class MeterReading:
@@ -20,7 +22,7 @@ class MeterReading:
         self.solar_units = solar_units
 
     @classmethod
-    def from_file_line(cls, line: str) -> Optional["MeterReading"]:
+    def from_file_line(cls, line: str) -> MeterReading | None:
         parts = line.strip().split("|")
         if len(parts) < 4:
             return None
@@ -94,8 +96,7 @@ class SolarTracker:
 
     def _save_all_to_file(self) -> None:
         with open(self.filepath, "w", encoding="utf-8") as f:
-            for reading in self.history:
-                f.write(reading.to_file_line())
+            f.writelines(reading.to_file_line() for reading in self.history)
 
     def validate_reading(self, new_reading: MeterReading) -> tuple[bool, str]:
         prior_readings = [r for r in self.history if r.date < new_reading.date]
@@ -123,7 +124,7 @@ class SolarTracker:
 
     def save_or_update_reading(
         self, reading: MeterReading
-    ) -> tuple[bool, Optional[ReadingPeriod]]:
+    ) -> tuple[bool, ReadingPeriod | None]:
         existing_index = next(
             (
                 i
@@ -155,235 +156,28 @@ class SolarTracker:
 
 # Web App Setup
 app = Bottle()
-project_root = Path(__file__).resolve().parent.parent.parent
+# Resolve project root and views directory relative to main.py
+BASE_DIR = Path(__file__).resolve().parent
+VIEWS_DIR = BASE_DIR / "views"
+
+# Force Bottle to look inside your project's views directory
+if str(VIEWS_DIR) not in bottle.TEMPLATE_PATH:
+    bottle.TEMPLATE_PATH.insert(0, str(VIEWS_DIR))
+
+
+project_root = Path(__file__).resolve().parent
+if not (project_root / "solar_readings.txt").exists():
+    project_root = project_root.parent.parent  # handle src/ layout if applicable
+
 data_file = project_root / "solar_readings.txt"
 tracker = SolarTracker(data_file)
-
-
-def render_table_component() -> str:
-    periods = tracker.get_periods()
-    if not periods:
-        return "<p class='empty-text'>No completed periods available in database.</p>"
-
-    rows = ""
-    for p in periods:
-        p_str = (
-            f"{p.start.date.strftime('%d/%m/%Y')} → {p.end.date.strftime('%d/%m/%Y')}"
-        )
-        if p.net_balance >= 0:
-            net_badge = (
-                f"<span class='badge export'>+{p.net_balance:.2f} kWh Net Export</span>"
-            )
-        else:
-            net_badge = f"<span class='badge import'>{abs(p.net_balance):.2f} kWh Net Import</span>"
-
-        rows += f"""
-        <tr>
-            <td><strong>{p_str}</strong></td>
-            <td>{p.days} days</td>
-            <td>+{p.import_diff:.2f} kWh</td>
-            <td>+{p.export_diff:.2f} kWh</td>
-            <td>+{p.solar_yield:.2f} kWh</td>
-            <td>{net_badge}</td>
-            <td>{p.consumption:.2f} kWh ({p.avg_daily_consumption:.2f}/day)</td>
-        </tr>
-        """
-
-    return f"""
-    <table>
-        <thead>
-            <tr>
-                <th>Period</th>
-                <th>Duration</th>
-                <th>Import (+)</th>
-                <th>Export (+)</th>
-                <th>Solar Gen</th>
-                <th>Grid Balance</th>
-                <th>Consumption</th>
-            </tr>
-        </thead>
-        <tbody>
-            {rows}
-        </tbody>
-    </table>
-    """
 
 
 @app.get("/")
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
-    return f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Solar & Grid Tracker</title>
-        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-        <style>
-            :root {{
-                --bg: #121418;
-                --card-bg: #1e222a;
-                --border: #2e3440;
-                --text: #e5e9f0;
-                --text-muted: #8892b0;
-                --accent: #d08770;
-                --green: #a3be8c;
-                --blue: #81a1c1;
-            }}
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                background-color: var(--bg);
-                color: var(--text);
-                margin: 0;
-                padding: 2rem 1rem;
-            }}
-            .container {{
-                max-width: 960px;
-                margin: 0 auto;
-            }}
-            h1 {{
-                font-size: 1.5rem;
-                letter-spacing: 0.5px;
-                margin-bottom: 1.5rem;
-                color: #fff;
-            }}
-            .card {{
-                background: var(--card-bg);
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 1.5rem;
-                margin-bottom: 2rem;
-            }}
-            .form-grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                gap: 1rem;
-            }}
-            .field-group {{
-                display: flex;
-                flex-direction: column;
-                gap: 0.4rem;
-            }}
-            label {{
-                font-size: 0.85rem;
-                color: var(--text-muted);
-            }}
-            input {{
-                background: var(--bg);
-                border: 1px solid var(--border);
-                color: #fff;
-                padding: 0.6rem;
-                border-radius: 4px;
-                font-size: 0.95rem;
-            }}
-            input:focus {{
-                outline: 1px solid var(--blue);
-            }}
-            button {{
-                background: var(--blue);
-                color: #121418;
-                font-weight: 600;
-                border: none;
-                padding: 0.75rem 1.25rem;
-                border-radius: 4px;
-                cursor: pointer;
-                margin-top: 1rem;
-                font-size: 0.95rem;
-            }}
-            button:hover {{
-                opacity: 0.9;
-            }}
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 0.5rem;
-            }}
-            th, td {{
-                text-align: left;
-                padding: 0.75rem 0.5rem;
-                border-bottom: 1px solid var(--border);
-                font-size: 0.9rem;
-            }}
-            th {{
-                color: var(--text-muted);
-                font-weight: 500;
-            }}
-            .badge {{
-                display: inline-block;
-                padding: 0.2rem 0.5rem;
-                border-radius: 4px;
-                font-size: 0.8rem;
-                font-weight: 600;
-            }}
-            .badge.export {{
-                background: rgba(163, 190, 140, 0.2);
-                color: var(--green);
-            }}
-            .badge.import {{
-                background: rgba(208, 135, 112, 0.2);
-                color: var(--accent);
-            }}
-            .alert-error {{
-                background: rgba(191, 97, 106, 0.2);
-                color: #bf616a;
-                padding: 0.75rem;
-                border-radius: 4px;
-                margin-bottom: 1rem;
-            }}
-            .alert-success {{
-                background: rgba(163, 190, 140, 0.2);
-                color: var(--green);
-                padding: 0.75rem;
-                border-radius: 4px;
-                margin-bottom: 1rem;
-            }}
-            .empty-text {{
-                color: var(--text-muted);
-                font-style: italic;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>☀️ Solar & Grid Meter Tracker</h1>
-
-            <div class="card">
-                <form hx-post="/readings" hx-target="#feedback" hx-swap="innerHTML">
-                    <div class="form-grid">
-                        <div class="field-group">
-                            <label>Reading Date</label>
-                            <input type="date" name="date" value="{today}" required />
-                        </div>
-                        <div class="field-group">
-                            <label>Cumulative Import (kWh)</label>
-                            <input type="number" step="0.01" name="import_units" placeholder="0.00" required />
-                        </div>
-                        <div class="field-group">
-                            <label>Cumulative Export (kWh)</label>
-                            <input type="number" step="0.01" name="export_units" placeholder="0.00" required />
-                        </div>
-                        <div class="field-group">
-                            <label>Cumulative Solar (kWh)</label>
-                            <input type="number" step="0.01" name="solar_units" placeholder="0.00" required />
-                        </div>
-                    </div>
-                    <button type="submit">Save Reading</button>
-                </form>
-            </div>
-
-            <div id="feedback"></div>
-
-            <div class="card">
-                <h2 style="font-size: 1.1rem; margin-top: 0;">Period Breakdown</h2>
-                <div id="history-table">
-                    {render_table_component()}
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    periods = tracker.get_periods()
+    return template("views/index.tpl", today=today, periods=periods)
 
 
 @app.post("/readings")
@@ -404,7 +198,6 @@ def add_reading():
         return f"<div class='alert-error'>❌ {err_msg}</div>"
 
     is_update, period = tracker.save_or_update_reading(new_reading)
-    response.headers["HX-Trigger"] = "reloadHistory"
 
     msg = (
         f"✓ Updated record for {curr_date.strftime('%d-%b-%Y')}."
@@ -412,18 +205,19 @@ def add_reading():
         else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}."
     )
 
+    # Re-render the table partial using the template
+    rendered_table = template("table_partial.tpl", periods=tracker.get_periods())
+
     return f"""
-    <div class='alert-success'>
-        {msg}
-    </div>
+    <div class='alert-success'>{msg}</div>
     <script>
-        document.getElementById('history-table').innerHTML = `{render_table_component()}`;
+        document.getElementById('history-table').innerHTML = `{rendered_table}`;
     </script>
     """
 
 
 def main():
-    run(app, host="127.0.0.1", port=8080, debug=True, reloader=True)
+    run(app, host="0.0.0.0", port=8080, debug=True, reloader=True)
 
 
 if __name__ == "__main__":
