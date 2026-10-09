@@ -99,7 +99,7 @@ def add_reading():
     msg = (
         f"✓ Updated record for {curr_date.strftime('%d-%b-%Y')}."
         if is_update
-        else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}.
+        else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}"
     )
 
     rendered_table = template(

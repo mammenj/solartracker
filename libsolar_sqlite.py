@@ -16,11 +16,13 @@ class MeterReadingStore:
         Args:
             db_filepath: Path to the SQLite database file.
         """
+
         self.db_filepath = db_filepath
         self._init_schema()
 
     def _init_schema(self) -> None:
         """Create the readings table if it doesn't exist."""
+        print("db is ", self.db_filepath)
         with sqlite3.connect(self.db_filepath) as conn:
             conn.execute(
                 """
