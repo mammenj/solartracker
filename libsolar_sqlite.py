@@ -24,20 +24,17 @@ class MeterReadingStore:
         with sqlite3.connect(self.db_filepath) as conn:
             conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS meter_readings (
+                CREATE TABLE IF NOT EXISTS meter_reacords (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     date TEXT NOT NULL UNIQUE,
-                    import_units REAL NOT NULL,
-                    export_units REAL NOT NULL,
-                    solar_units REAL NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
+                    import REAL NOT NULL,
+                    export REAL NOT NULL,
+                    solar_gen REAL NOT NULL,
+                    addedon TEXT NOT NULL
                 )
                 """
             )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_date ON meter_readings(date)"
-            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
             conn.commit()
 
     def load_all(self) -> list[MeterReading]:
@@ -50,7 +47,7 @@ class MeterReadingStore:
         readings = []
         with sqlite3.connect(self.db_filepath) as conn:
             cursor = conn.execute(
-                "SELECT date, import_units, export_units, solar_units FROM meter_readings ORDER BY date"
+                "SELECT date, import, export, solar_gen FROM meter_records ORDER BY date ASC"
             )
             for row in cursor.fetchall():
                 date_str, import_units, export_units, solar_units = row
@@ -71,28 +68,27 @@ class MeterReadingStore:
             True if this was an update, False if it was a new insert.
         """
         date_str = reading.date.strftime("%Y-%m-%d")
-        now = datetime.now().isoformat()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         with sqlite3.connect(self.db_filepath) as conn:
             # Check if reading exists for this date
             cursor = conn.execute(
-                "SELECT id FROM meter_readings WHERE date = ?", (date_str,)
+                "SELECT id FROM meter_records WHERE date = ?", (date_str,)
             )
             existing = cursor.fetchone()
 
             if existing:
                 conn.execute(
                     """
-                    UPDATE meter_readings
-                    SET import_units = ?, export_units = ?, solar_units = ?, updated_at = ?
+                    UPDATE meter_records
+                    SET import = ?, export = ?, solar_gen = ?, addedon = ?
                     WHERE date = ?
                     """,
                     (
                         reading.import_units,
                         reading.export_units,
                         reading.solar_units,
-                        now,
-                        date_str,
+                        now_str,
                     ),
                 )
                 conn.commit()
@@ -100,16 +96,15 @@ class MeterReadingStore:
             else:
                 conn.execute(
                     """
-                    INSERT INTO meter_readings (date, import_units, export_units, solar_units, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO meter_records (date, import, export, solar_gen, addedon)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
                     (
                         date_str,
                         reading.import_units,
                         reading.export_units,
                         reading.solar_units,
-                        now,
-                        now,
+                        now_str,
                     ),
                 )
                 conn.commit()

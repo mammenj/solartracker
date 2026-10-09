@@ -17,10 +17,8 @@ if str(VIEWS_DIR) not in bottle.TEMPLATE_PATH:
 
 
 project_root = Path(__file__).resolve().parent
-if not (project_root / "solar_readings.db").exists():
-    project_root = project_root.parent.parent
 
-db_file = project_root / "solar_readings.db"
+db_file = project_root / "meter_logs.db"
 store = MeterReadingStore(db_file)
 
 
@@ -92,9 +90,9 @@ def add_reading():
 
     new_reading = MeterReading(curr_date, curr_import, curr_export, curr_solar)
 
-    #    is_valid, err_msg = validate_reading(new_reading)
-    # if not is_valid:
-    #    return f"<div class='alert-error'>❌ {err_msg}</div>"
+    is_valid, err_msg = validate_reading(new_reading)
+    if not is_valid:
+        return f"<div class='alert-error'>❌ {err_msg}</div>"
 
     is_update = store.save_or_update(new_reading)
 
