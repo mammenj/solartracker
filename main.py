@@ -6,6 +6,8 @@ from bottle import Bottle, request, run, template
 from libsolar import MeterReading, ReadingPeriod, TotalsDict
 from libsolar_sqlite import MeterReadingStore
 
+from config import load_config
+
 # Web App Setup
 app = Bottle()
 BASE_DIR = Path(__file__).resolve().parent
@@ -15,11 +17,9 @@ VIEWS_DIR = BASE_DIR / "views"
 if str(VIEWS_DIR) not in bottle.TEMPLATE_PATH:
     bottle.TEMPLATE_PATH.insert(0, str(VIEWS_DIR))
 
-
-project_root = Path(__file__).resolve().parent
-
-db_file = project_root / "meter_logs.db"
-store = MeterReadingStore(db_file)
+# Load configuration
+config = load_config()
+store = MeterReadingStore(config.db_file)
 
 
 def get_periods() -> list[ReadingPeriod]:
@@ -99,7 +99,7 @@ def add_reading():
     msg = (
         f"✓ Updated record for {curr_date.strftime('%d-%b-%Y')}."
         if is_update
-        else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}."
+        else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}.
     )
 
     rendered_table = template(
@@ -115,7 +115,7 @@ def add_reading():
 
 
 def main():
-    run(app, host="localhost", port=8080, server="gunicorn")
+    run(app, host=config.host, port=config.port, server=config.server)
 
 
 if __name__ == "__main__":
