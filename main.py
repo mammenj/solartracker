@@ -50,6 +50,10 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
         return True, ""
 
     last = readings[-1]
+    is_present = any(r.date == new_reading.date for r in readings)
+    print("date is is_presenti >>>>>>>>", is_present)
+    if is_present:
+        return True, "Updating"
     if new_reading.import_units < last.import_units:
         return (
             False,
@@ -89,12 +93,12 @@ def add_reading():
         return "<div class='alert-error'>❌ Invalid form input format. Please check numeric values.</div>"
 
     new_reading = MeterReading(curr_date, curr_import, curr_export, curr_solar)
-# removing validation
-    """
+    # removing validation
+
     is_valid, err_msg = validate_reading(new_reading)
     if not is_valid:
         return f"<div class='alert-error'>❌ {err_msg}</div>"
-    """
+
     is_update = store.save_or_update(new_reading)
 
     msg = (
