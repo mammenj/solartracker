@@ -3,11 +3,11 @@ from pathlib import Path
 
 import bottle
 from bottle import Bottle, request, run, template
-from libsolar import MeterReading, SolarTracker, TotalsDict
+from libsolar import MeterReading, ReadingPeriod, TotalsDict
+from libsolar_sqlite import MeterReadingStore
 
 # Web App Setup
 app = Bottle()
-# Resolve project root and views directory relative to main.py
 BASE_DIR = Path(__file__).resolve().parent
 VIEWS_DIR = BASE_DIR / "views"
 
@@ -17,18 +17,63 @@ if str(VIEWS_DIR) not in bottle.TEMPLATE_PATH:
 
 
 project_root = Path(__file__).resolve().parent
-if not (project_root / "solar_readings.txt").exists():
-    project_root = project_root.parent.parent  # handle src/ layout if applicable
 
-data_file = project_root / "solar_readings.txt"
-tracker = SolarTracker(data_file)
+db_file = project_root / "meter_logs.db"
+store = MeterReadingStore(db_file)
+
+
+def get_periods() -> list[ReadingPeriod]:
+    """Get all reading periods from the database."""
+    readings = store.load_all()
+    return [
+        ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
+    ]
+
+
+def get_totals() -> TotalsDict:
+    """Calculate totals from all periods."""
+    periods = get_periods()
+    return {
+        "total_days": sum(p.days for p in periods),
+        "total_import": sum(p.import_diff for p in periods),
+        "total_export": sum(p.export_diff for p in periods),
+        "total_solar": sum(p.solar_yield for p in periods),
+        "total_balance": sum(p.net_balance for p in periods),
+        "total_consumption": sum(p.consumption for p in periods),
+    }
+
+
+def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
+    """Validate a new reading against the last stored reading."""
+    readings = store.load_all()
+    if not readings:
+        return True, ""
+
+    last = readings[-1]
+    if new_reading.import_units < last.import_units:
+        return (
+            False,
+            f"Import reading ({new_reading.import_units:.2f} kWh) cannot be lower than prior reading ({last.import_units:.2f} kWh on {last.date.strftime('%Y-%m-%d')}).",
+        )
+    if new_reading.export_units < last.export_units:
+        return (
+            False,
+            f"Export reading ({new_reading.export_units:.2f} kWh) cannot be lower than prior reading ({last.export_units:.2f} kWh on {last.date.strftime('%Y-%m-%d')}).",
+        )
+    if new_reading.solar_units < last.solar_units:
+        return (
+            False,
+            f"Solar reading ({new_reading.solar_units:.2f} kWh) cannot be lower than prior reading ({last.solar_units:.2f} kWh on {last.date.strftime('%Y-%m-%d')}).",
+        )
+
+    return True, ""
 
 
 @app.get("/")
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
-    periods = tracker.get_periods()
-    totals: TotalsDict = tracker.get_totals()
+    periods = get_periods()
+    totals: TotalsDict = get_totals()
     return template("views/index.tpl", today=today, periods=periods, totals=totals)
 
 
@@ -40,16 +85,16 @@ def add_reading():
         curr_import = float(request.forms.get("import_units"))
         curr_export = float(request.forms.get("export_units"))
         curr_solar = float(request.forms.get("solar_units"))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return "<div class='alert-error'>❌ Invalid form input format. Please check numeric values.</div>"
 
     new_reading = MeterReading(curr_date, curr_import, curr_export, curr_solar)
 
-    is_valid, err_msg = tracker.validate_reading(new_reading)
+    is_valid, err_msg = validate_reading(new_reading)
     if not is_valid:
         return f"<div class='alert-error'>❌ {err_msg}</div>"
 
-    is_update, period = tracker.save_or_update_reading(new_reading)
+    is_update = store.save_or_update(new_reading)
 
     msg = (
         f"✓ Updated record for {curr_date.strftime('%d-%b-%Y')}."
@@ -57,9 +102,8 @@ def add_reading():
         else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}."
     )
 
-    # Re-render the table partial using the template
     rendered_table = template(
-        "table_partial.tpl", periods=tracker.get_periods(), totals=tracker.get_totals()
+        "table_partial.tpl", periods=get_periods(), totals=get_totals()
     )
 
     return f"""
@@ -71,7 +115,6 @@ def add_reading():
 
 
 def main():
-    # run(app, host="0.0.0.0", port=8080, debug=True, reloader=True)
     run(app, host="localhost", port=8080, server="gunicorn")
 
 
