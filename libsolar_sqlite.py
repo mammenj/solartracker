@@ -91,6 +91,7 @@ class MeterReadingStore:
                         reading.export_units,
                         reading.solar_units,
                         now_str,
+                        date_str,
                     ),
                 )
                 conn.commit()

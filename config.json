@@ -2,5 +2,5 @@
   "host": "localhost",
   "port": 8080,
   "server": "gunicorn",
-  "db": "logs.db"
+  "db": "meter_logs.db"
 }
