@@ -22,11 +22,11 @@ class MeterReadingStore:
 
     def _init_schema(self) -> None:
         """Create the readings table if it doesn't exist."""
-        print("db is ", self.db_filepath)
+        print("db is----->> ", self.db_filepath)
         with sqlite3.connect(self.db_filepath) as conn:
             conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS meter_reacords (
+                CREATE TABLE IF NOT EXISTS meter_records (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     date TEXT NOT NULL UNIQUE,
                     import REAL NOT NULL,
