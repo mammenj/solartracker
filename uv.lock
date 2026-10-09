@@ -21,8 +21,8 @@ wheels = [
 ]
 
 [[package]]
-name = "solartracker"
-version = "0.1.0"
+name = "st"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "bottle" },
