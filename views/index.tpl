@@ -30,7 +30,7 @@
         }
 
         .container {
-            max-width: 1024px;
+            max-width: 100%;
             margin: 0 auto;
         }
 
