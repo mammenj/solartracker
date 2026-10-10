@@ -254,7 +254,7 @@
                                     name="date"
                                     value="{{today}}"
                                     required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20"
                                 />
                             </div>
 
@@ -267,7 +267,7 @@
                                     name="import_units"
                                     placeholder="0.00"
                                     required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20"
                                 />
                             </div>
 
@@ -280,7 +280,7 @@
                                     name="export_units"
                                     placeholder="0.00"
                                     required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20"
                                 />
                             </div>
 
@@ -293,7 +293,7 @@
                                     name="solar_units"
                                     placeholder="0.00"
                                     required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20"
                                 />
                             </div>
                         </div>
@@ -301,7 +301,7 @@
                         <div class="flex justify-start">
                             <button
                                 type="submit"
-                                class="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-400 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-2 focus:ring-offset-slate-950"
+                                class="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-400 hover:to-blue-500 active:scale-95"
                             >
                                 Save Reading
                             </button>
@@ -351,7 +351,7 @@
                 </div>
 
                 % for p in periods:
-                <div data-period="true" data-start="{{p.start}}" data-import="{{p.import_diff}}" data-export="{{p.export_diff}}" data-solar="{{p.solar_yield}}" data-consumption="{{p.consumption}}" class="hidden"></div>
+                <div data-period="true" data-start="{{p.start.date.strftime('%Y-%m-%d')}}" data-import="{{p.import_diff}}" data-export="{{p.export_diff}}" data-solar="{{p.solar_yield}}" data-consumption="{{p.consumption}}" class="hidden"></div>
                 % end
             </section>
         </main>
