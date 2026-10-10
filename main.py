@@ -3,7 +3,7 @@ from pathlib import Path
 
 import bottle
 from bottle import Bottle, request, run, template
-from libsolar import MeterReading, ReadingPeriod, TotalsDict
+from libsolar import MeterReading, ReadingPeriod, TotalsDict, EnergyExtrapolator
 from libsolar_sqlite import MeterReadingStore
 
 from config import load_config
@@ -27,6 +27,23 @@ def get_periods() -> list[ReadingPeriod]:
     readings = store.load_all()
     return [
         ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
+    ]
+
+
+def get_periods_with_weekly() -> list[dict]:
+    """Get periods with weekly extrapolated values."""
+    periods = get_periods()
+    return [
+        {
+            'period': p,
+            'extrapolator': EnergyExtrapolator(p),
+            'weekly_import': EnergyExtrapolator(p).weekly_import,
+            'weekly_export': EnergyExtrapolator(p).weekly_export,
+            'weekly_solar': EnergyExtrapolator(p).weekly_solar_yield,
+            'weekly_consumption': EnergyExtrapolator(p).weekly_consumption,
+            'weekly_balance': EnergyExtrapolator(p).weekly_net_balance,
+        }
+        for p in periods
     ]
 
 
@@ -77,8 +94,9 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
     periods = get_periods()
+    periods_with_weekly = get_periods_with_weekly()
     totals: TotalsDict = get_totals()
-    return template("views/index.tpl", today=today, periods=periods, totals=totals)
+    return template("views/index.tpl", today=today, periods=periods, periods_with_weekly=periods_with_weekly, totals=totals)
 
 
 @app.post("/readings")
