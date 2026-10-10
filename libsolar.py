@@ -81,6 +81,49 @@ class ReadingPeriod:
         return self.consumption / self.days if self.days > 0 else self.consumption
 
 
+class EnergyExtrapolator:
+    """Extrapolates period data to weekly (7-day) normalized values."""
+
+    def __init__(self, reading_period: ReadingPeriod):
+        self.period = reading_period
+        self.days = reading_period.days
+
+    @property
+    def weekly_import(self) -> float:
+        """Normalize import to 7-day equivalent."""
+        if self.days <= 0:
+            return 0.0
+        return round((self.period.import_diff / self.days) * 7, 2)
+
+    @property
+    def weekly_export(self) -> float:
+        """Normalize export to 7-day equivalent."""
+        if self.days <= 0:
+            return 0.0
+        return round((self.period.export_diff / self.days) * 7, 2)
+
+    @property
+    def weekly_solar_yield(self) -> float:
+        """Normalize solar yield to 7-day equivalent."""
+        if self.days <= 0:
+            return 0.0
+        return round((self.period.solar_yield / self.days) * 7, 2)
+
+    @property
+    def weekly_consumption(self) -> float:
+        """Normalize consumption to 7-day equivalent."""
+        if self.days <= 0:
+            return 0.0
+        return round((self.period.consumption / self.days) * 7, 2)
+
+    @property
+    def weekly_net_balance(self) -> float:
+        """Normalize net balance to 7-day equivalent."""
+        if self.days <= 0:
+            return 0.0
+        return round((self.period.net_balance / self.days) * 7, 2)
+
+
 class SolarTracker:
     """Manages reading history state, validation, and calculations."""
 
