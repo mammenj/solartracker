@@ -43,7 +43,13 @@
             const emptyState = document.getElementById('chart-empty');
             const chartWrap = document.getElementById('chart-wrap');
             const periods = window.chartData || [];
-
+// --- ADD THESE DEBUG LOGS ---
+           if (debugText) {
+              debugText.innerText = `Periods found: ${periods.length} | First item: ${JSON.stringify(periods[0] || {})}`;
+            }
+            console.log("Loaded chartData length:", periods.length);
+            console.log("Raw period items:", periods);
+             // ----------------------------
             if (!ctx) return;
 
             if (!periods.length) {
@@ -54,7 +60,9 @@
 
             if (chartWrap) chartWrap.classList.remove('hidden');
             if (emptyState) emptyState.classList.add('hidden');
-
+//CHECK PARSED NUMBERS ---
+            console.log("Parsed Import Data:", importData);
+            console.log("Parsed Solar Data:",)
             const labels = periods.map(p => formatPeriodLabel(p.start));
             const importData = periods.map(p => Number(p.import_diff) || 0);
             const exportData = periods.map(p => Number(p.export_diff) || 0);
@@ -232,8 +240,32 @@
                 }
             });
         }
+          function switchTab(tabName) {
+            document.getElementById('table-tab').classList.add('hidden');
+            document.getElementById('chart-tab').classList.add('hidden');
 
-        function switchTab(tabName) {
+            document.getElementById('table-btn').classList.remove('border-blue-500', 'text-white');
+            document.getElementById('chart-btn').classList.remove('border-blue-500', 'text-white');
+            document.getElementById('table-btn').classList.add('text-slate-400');
+            document.getElementById('chart-btn').classList.add('text-slate-400');
+
+            document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
+            document.getElementById(tabName + '-btn').classList.add('border-blue-500', 'text-white');
+
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+
+            if (tabName === 'chart') {
+              setTimeout(() => {
+                initChart();
+                if (window.energyChartInstance) {
+                  window.energyChartInstance.resize(); // Ensures canvas scales properly out of hidden state
+                }
+              }, 80);
+            }
+          }
+
+
+        function switchTab2(tabName) {
             document.getElementById('table-tab').classList.add('hidden');
             document.getElementById('chart-tab').classList.add('hidden');
 
@@ -399,25 +431,30 @@
                     <div id="chart-wrap" class="rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:p-6">
                         <canvas id="energyChart" height="220"></canvas>
                     </div>
+                    <!-- ADD THIS DEBUG BOX -->
+    <div id="debug-box" class="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-mono text-amber-200">
+        <strong>Debug Info:</strong> <span id="debug-text">Loading data...</span>
+    </div>
+    <!-- ------------------ -->
                     <div id="chart-empty" class="hidden rounded-xl border border-dashed border-slate-600 bg-slate-800/40 p-8 text-center">
                         <p class="text-base font-medium text-slate-200">No energy data available yet.</p>
                         <p class="mt-2 text-sm text-slate-400">Add a reading to generate your chart.</p>
                     </div>
                 </div>
-
-                % for p in periods_with_weekly:
-                <div data-period="true"
-                     data-start="{{p['start'],}}"
-                     data-import="{{p['import_diff']}}"
-                     data-export="{{p['export_diff']}}"
-                     data-solar="{{p['solar_yield']}}"
-                     data-consumption="{{p['consumption']}}"
-                     data-weekly-import="{{p['weekly_import']}}"
-                     data-weekly-export="{{p['weekly_export']}}"
-                     data-weekly-solar="{{p['weekly_solar']}}"
-                     data-weekly-consumption="{{p['weekly_consumption']}}"
-                     class="hidden"></div>
-                % end
+% for p in periods_with_weekly:
+<div data-period="true"
+     data-start="{{p['start']}}"
+     data-import="{{p['import_diff']}}"
+     data-export="{{p['export_diff']}}"
+     data-solar="{{p['solar_yield']}}"
+     data-consumption="{{p['consumption']}}"
+     data-weekly-import="{{p['weekly_import']}}"
+     data-weekly-export="{{p['weekly_export']}}"
+     data-weekly-solar="{{p['weekly_solar']}}"
+     data-weekly-consumption="{{p['weekly_consumption']}}"
+     class="hidden"></div>
+% end
+                
             </section>
         </main>
     </div>
