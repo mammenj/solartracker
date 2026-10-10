@@ -33,6 +33,9 @@ def get_periods() -> list[ReadingPeriod]:
 def get_periods_with_weekly() -> list[dict]:
     """Get periods with weekly extrapolated values."""
     periods = get_periods()
+    print(
+        "number of periods",
+    )
     return [
         {
             "period": p,
@@ -135,9 +138,13 @@ def add_reading():
         if is_update
         else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}"
     )
+    periods_with_weekly = get_periods_with_weekly()
 
     rendered_table = template(
-        "table_partial.tpl", periods=get_periods(), totals=get_totals()
+        "table_partial.tpl",
+        periods_with_weekly=periods_with_weekly,
+        periods=get_periods(),
+        totals=get_totals(),
     )
 
     return f"""

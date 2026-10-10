@@ -93,7 +93,9 @@ class EnergyExtrapolator:
         """Normalize import to 7-day equivalent."""
         if self.days <= 0:
             return 0.0
-        return round((self.period.import_diff / self.days) * 7, 2)
+        weekly_import = round((self.period.import_diff / self.days) * 7, 2)
+        # print("weekly imprt -----", weekly_import)
+        return weekly_import
 
     @property
     def weekly_export(self) -> float:
