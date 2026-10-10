@@ -27,53 +27,59 @@
             }
         }
 
-        function formatPeriodLabel(startValue) {
-            if (!startValue) return 'Period';
-            try {
-                const date = new Date(startValue);
-                if (!Number.isNaN(date.getTime())) {
-                    return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
-                }
-            } catch (e) {}
-            return String(startValue).split('T')[0];
+function formatPeriodLabel(startValue) {
+    if (!startValue) return 'Period';
+    
+    // Clean up if the string contains fallback backend object text
+    let cleanString = String(startValue);
+    if (cleanString.includes('MetereadingObject')) {
+        return 'Custom Date'; 
+    }
+
+    try {
+        const date = new Date(cleanString);
+        if (!Number.isNaN(date.getTime())) {
+            return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
         }
+    } catch (e) {}
+    
+    return cleanString.split('T')[0];
+}
+function initChart() {
+    const ctx = document.getElementById('energyChart');
+    const emptyState = document.getElementById('chart-empty');
+    const chartWrap = document.getElementById('chart-wrap');
+    const periods = window.chartData || [];
 
-        function initChart() {
-            const ctx = document.getElementById('energyChart');
-            const emptyState = document.getElementById('chart-empty');
-            const chartWrap = document.getElementById('chart-wrap');
-            const periods = window.chartData || [];
-// --- ADD THESE DEBUG LOGS ---
-           if (debugText) {
-              debugText.innerText = `Periods found: ${periods.length} | First item: ${JSON.stringify(periods[0] || {})}`;
-            }
-            console.log("Loaded chartData length:", periods.length);
-            console.log("Raw period items:", periods);
-             // ----------------------------
-            if (!ctx) return;
+    console.log("Loaded chartData length:", periods.length);
+    console.log("Raw period items:", periods);
 
-            if (!periods.length) {
-                if (chartWrap) chartWrap.classList.add('hidden');
-                if (emptyState) emptyState.classList.remove('hidden');
-                return;
-            }
+    if (!ctx) return;
+    if (!periods.length) {
+        if (chartWrap) chartWrap.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+    }
+    if (chartWrap) chartWrap.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
 
-            if (chartWrap) chartWrap.classList.remove('hidden');
-            if (emptyState) emptyState.classList.add('hidden');
-//CHECK PARSED NUMBERS ---
-            console.log("Parsed Import Data:", importData);
-            console.log("Parsed Solar Data:",)
-            const labels = periods.map(p => formatPeriodLabel(p.start));
-            const importData = periods.map(p => Number(p.import_diff) || 0);
-            const exportData = periods.map(p => Number(p.export_diff) || 0);
-            const solarData = periods.map(p => Number(p.solar_yield) || 0);
-            const consumptionData = periods.map(p => Number(p.consumption) || 0);
+    const labels = periods.map(p => formatPeriodLabel(p.start));
+    const importData = periods.map(p => Number(p.import_diff) || 0);
+    const exportData = periods.map(p => Number(p.export_diff) || 0);
+    const solarData = periods.map(p => Number(p.solar_yield) || 0);
+    const consumptionData = periods.map(p => Number(p.consumption) || 0);
+    const weeklyImportData = periods.map(p => Number(p.weekly_import) || 0);
+    const weeklyExportData = periods.map(p => Number(p.weekly_export) || 0);
+    const weeklySolarData = periods.map(p => Number(p.weekly_solar) || 0);
+    const weeklyConsumptionData = periods.map(p => Number(p.weekly_consumption) || 0);
 
-            const weeklyImportData = periods.map(p => Number(p.weekly_import) || 0);
-            const weeklyExportData = periods.map(p => Number(p.weekly_export) || 0);
-            const weeklySolarData = periods.map(p => Number(p.weekly_solar) || 0);
-            const weeklyConsumptionData = periods.map(p => Number(p.weekly_consumption) || 0);
+    // <-- Moved console.logs here after variables exist
+    console.log("Parsed Import Data:", importData);
+    console.log("Parsed Solar Data:", solarData);
 
+   // ... rest of your chart initialization code
+        
+        ////15:07:54
             if (window.energyChartInstance) {
                 window.energyChartInstance.destroy();
             }
@@ -284,30 +290,45 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const tableData = document.querySelectorAll('[data-period]');
-            window.chartData = Array.from(tableData).map(row => ({
-                start: row.getAttribute('data-start'),
-                import_diff: row.getAttribute('data-import'),
-                export_diff: row.getAttribute('data-export'),
-                solar_yield: row.getAttribute('data-solar'),
-                consumption: row.getAttribute('data-consumption'),
-                weekly_import: row.getAttribute('data-weekly-import'),
-                weekly_export: row.getAttribute('data-weekly-export'),
-                weekly_solar: row.getAttribute('data-weekly-solar'),
-                weekly_consumption: row.getAttribute('data-weekly-consumption')
-            }));
+document.addEventListener('DOMContentLoaded', function() {
+    const tableData = document.querySelectorAll('[data-period]');
+    window.chartData = Array.from(tableData).map(row => {
+        let rawStart = row.getAttribute('data-start') || '';
+        
+        // 🛠️ REPLACEMENT STRIPPER LOGIC:
+        // If it looks like <libsolar.MetereadingObject at 0x7f...>, we extract clean data
+        if (rawStart.includes('MetereadingObject')) {
+            // Option A: If your object string contains a readable date text somewhere inside it, extract it here.
+            // Option B: If it's a completely blind memory address object representation, fall back safely.
+            rawStart = row.getAttribute('data-date') || new Date().toISOString().split('T')[0]; 
+        }
 
-            if (!window.chartData.length) {
-                const chartEmpty = document.getElementById('chart-empty');
-                const chartWrap = document.getElementById('chart-wrap');
-                if (chartEmpty) chartEmpty.classList.remove('hidden');
-                if (chartWrap) chartWrap.classList.add('hidden');
-            } else {
-                initChart();
-            }
-        });
-    </script>
+        return {
+            start: rawStart,
+            import_diff: row.getAttribute('data-import'),
+            export_diff: row.getAttribute('data-export'),
+            solar_yield: row.getAttribute('data-solar'),
+            consumption: row.getAttribute('data-consumption'),
+            weekly_import: row.getAttribute('data-weekly-import'),
+            weekly_export: row.getAttribute('data-weekly-export'),
+            weekly_solar: row.getAttribute('data-weekly-solar'),
+            weekly_consumption: row.getAttribute('data-weekly-consumption')
+        };
+    });
+
+    if (!window.chartData.length) {
+        const chartEmpty = document.getElementById('chart-empty');
+        const chartWrap = document.getElementById('chart-wrap');
+        if (chartEmpty) chartEmpty.classList.remove('hidden');
+        if (chartWrap) chartWrap.classList.add('hidden');
+    } else {
+        initChart();
+    }
+});
+
+///boot
+        
+ </script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
     <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
@@ -442,8 +463,9 @@
                     </div>
                 </div>
 % for p in periods_with_weekly:
-<div data-period="true"
-     data-start="{{p['start']}}"
+
+<div data-period="true" 
+     data-start="{{ p['start'].date}}" 
      data-import="{{p['import_diff']}}"
      data-export="{{p['export_diff']}}"
      data-solar="{{p['solar_yield']}}"

@@ -33,9 +33,6 @@ def get_periods() -> list[ReadingPeriod]:
 def get_periods_with_weekly() -> list[dict]:
     """Get periods with weekly extrapolated values."""
     periods = get_periods()
-    print(
-        "number of periods",
-    )
     return [
         {
             "period": p,
