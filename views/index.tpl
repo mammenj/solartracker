@@ -407,7 +407,7 @@
 
                 % for p in periods_with_weekly:
                 <div data-period="true"
-                     data-start="{{p['start']}}"
+                     data-start="{{p['start'],}}"
                      data-import="{{p['import_diff']}}"
                      data-export="{{p['export_diff']}}"
                      data-solar="{{p['solar_yield']}}"

@@ -35,13 +35,18 @@ def get_periods_with_weekly() -> list[dict]:
     periods = get_periods()
     return [
         {
-            'period': p,
-            'extrapolator': EnergyExtrapolator(p),
-            'weekly_import': EnergyExtrapolator(p).weekly_import,
-            'weekly_export': EnergyExtrapolator(p).weekly_export,
-            'weekly_solar': EnergyExtrapolator(p).weekly_solar_yield,
-            'weekly_consumption': EnergyExtrapolator(p).weekly_consumption,
-            'weekly_balance': EnergyExtrapolator(p).weekly_net_balance,
+            "period": p,
+            "extrapolator": EnergyExtrapolator(p),
+            "start": p.start,
+            "weekly_import": EnergyExtrapolator(p).weekly_import,
+            "weekly_export": EnergyExtrapolator(p).weekly_export,
+            "weekly_solar": EnergyExtrapolator(p).weekly_solar_yield,
+            "weekly_consumption": EnergyExtrapolator(p).weekly_consumption,
+            "weekly_balance": EnergyExtrapolator(p).weekly_net_balance,
+            "import_diff": p.import_diff,
+            "export_diff": p.export_diff,
+            "solar_yield": p.solar_yield,
+            "consumption": p.consumption,
         }
         for p in periods
     ]
@@ -96,7 +101,13 @@ def index():
     periods = get_periods()
     periods_with_weekly = get_periods_with_weekly()
     totals: TotalsDict = get_totals()
-    return template("views/index.tpl", today=today, periods=periods, periods_with_weekly=periods_with_weekly, totals=totals)
+    return template(
+        "views/index.tpl",
+        today=today,
+        periods=periods,
+        periods_with_weekly=periods_with_weekly,
+        totals=totals,
+    )
 
 
 @app.post("/readings")
