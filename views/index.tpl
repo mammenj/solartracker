@@ -61,56 +61,107 @@
             const solarData = periods.map(p => Number(p.solar_yield) || 0);
             const consumptionData = periods.map(p => Number(p.consumption) || 0);
 
+            const weeklyImportData = periods.map(p => Number(p.weekly_import) || 0);
+            const weeklyExportData = periods.map(p => Number(p.weekly_export) || 0);
+            const weeklySolarData = periods.map(p => Number(p.weekly_solar) || 0);
+            const weeklyConsumptionData = periods.map(p => Number(p.weekly_consumption) || 0);
+
             if (window.energyChartInstance) {
                 window.energyChartInstance.destroy();
             }
+
+            const datasets = [
+                {
+                    label: 'Import',
+                    data: importData,
+                    borderColor: '#fbbf24',
+                    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fbbf24'
+                },
+                {
+                    label: 'Import (7d)',
+                    data: weeklyImportData,
+                    borderColor: '#fbbf24',
+                    backgroundColor: 'rgba(251, 191, 36, 0.06)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 2,
+                    pointBackgroundColor: '#fbbf24',
+                    borderDash: [6, 6]
+                },
+                {
+                    label: 'Export',
+                    data: exportData,
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#34d399'
+                },
+                {
+                    label: 'Export (7d)',
+                    data: weeklyExportData,
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.06)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 2,
+                    pointBackgroundColor: '#34d399',
+                    borderDash: [6, 6]
+                },
+                {
+                    label: 'Solar',
+                    data: solarData,
+                    borderColor: '#fb923c',
+                    backgroundColor: 'rgba(251, 146, 60, 0.12)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fb923c'
+                },
+                {
+                    label: 'Solar (7d)',
+                    data: weeklySolarData,
+                    borderColor: '#fb923c',
+                    backgroundColor: 'rgba(251, 146, 60, 0.06)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 2,
+                    pointBackgroundColor: '#fb923c',
+                    borderDash: [6, 6]
+                },
+                {
+                    label: 'Consumption',
+                    data: consumptionData,
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#60a5fa'
+                },
+                {
+                    label: 'Consumption (7d)',
+                    data: weeklyConsumptionData,
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96, 165, 250, 0.06)',
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 2,
+                    pointBackgroundColor: '#60a5fa',
+                    borderDash: [6, 6]
+                }
+            ];
 
             window.energyChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: 'Import',
-                            data: importData,
-                            borderColor: '#fbbf24',
-                            backgroundColor: 'rgba(251, 191, 36, 0.12)',
-                            fill: false,
-                            tension: 0.35,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#fbbf24'
-                        },
-                        {
-                            label: 'Export',
-                            data: exportData,
-                            borderColor: '#34d399',
-                            backgroundColor: 'rgba(52, 211, 153, 0.12)',
-                            fill: false,
-                            tension: 0.35,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#34d399'
-                        },
-                        {
-                            label: 'Solar',
-                            data: solarData,
-                            borderColor: '#fb923c',
-                            backgroundColor: 'rgba(251, 146, 60, 0.12)',
-                            fill: false,
-                            tension: 0.35,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#fb923c'
-                        },
-                        {
-                            label: 'Consumption',
-                            data: consumptionData,
-                            borderColor: '#60a5fa',
-                            backgroundColor: 'rgba(96, 165, 250, 0.12)',
-                            fill: false,
-                            tension: 0.35,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#60a5fa'
-                        }
-                    ]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -208,7 +259,11 @@
                 import_diff: row.getAttribute('data-import'),
                 export_diff: row.getAttribute('data-export'),
                 solar_yield: row.getAttribute('data-solar'),
-                consumption: row.getAttribute('data-consumption')
+                consumption: row.getAttribute('data-consumption'),
+                weekly_import: row.getAttribute('data-weekly-import'),
+                weekly_export: row.getAttribute('data-weekly-export'),
+                weekly_solar: row.getAttribute('data-weekly-solar'),
+                weekly_consumption: row.getAttribute('data-weekly-consumption')
             }));
 
             if (!window.chartData.length) {
@@ -350,8 +405,18 @@
                     </div>
                 </div>
 
-                % for p in periods:
-                <div data-period="true" data-start="{{p.start.date.strftime('%Y-%m-%d')}}" data-import="{{p.import_diff}}" data-export="{{p.export_diff}}" data-solar="{{p.solar_yield}}" data-consumption="{{p.consumption}}" class="hidden"></div>
+                % for p in periods_with_weekly:
+                <div data-period="true"
+                     data-start="{{p['start']}}"
+                     data-import="{{p['import_diff']}}"
+                     data-export="{{p['export_diff']}}"
+                     data-solar="{{p['solar_yield']}}"
+                     data-consumption="{{p['consumption']}}"
+                     data-weekly-import="{{p['weekly_import']}}"
+                     data-weekly-export="{{p['weekly_export']}}"
+                     data-weekly-solar="{{p['weekly_solar']}}"
+                     data-weekly-consumption="{{p['weekly_consumption']}}"
+                     class="hidden"></div>
                 % end
             </section>
         </main>
