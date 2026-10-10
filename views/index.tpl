@@ -27,88 +27,130 @@
             }
         }
 
+        function formatPeriodLabel(startValue) {
+            if (!startValue) return 'Period';
+            try {
+                const date = new Date(startValue);
+                if (!Number.isNaN(date.getTime())) {
+                    return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
+                }
+            } catch (e) {}
+            return String(startValue).split('T')[0];
+        }
+
         function initChart() {
             const ctx = document.getElementById('energyChart');
+            const emptyState = document.getElementById('chart-empty');
+            const chartWrap = document.getElementById('chart-wrap');
+            const periods = window.chartData || [];
+
             if (!ctx) return;
 
-            // Parse data from the page
-            const periods = window.chartData || [];
-            
-            if (periods.length === 0) return;
+            if (!periods.length) {
+                if (chartWrap) chartWrap.classList.add('hidden');
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
 
-            const labels = periods.map(p => `${p.start.split('T')[0]}`);
-            const importData = periods.map(p => parseFloat(p.import_diff));
-            const exportData = periods.map(p => parseFloat(p.export_diff));
-            const solarData = periods.map(p => parseFloat(p.solar_yield));
-            const consumptionData = periods.map(p => parseFloat(p.consumption));
+            if (chartWrap) chartWrap.classList.remove('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
 
-            new Chart(ctx, {
-                type: 'bar',
+            const labels = periods.map(p => formatPeriodLabel(p.start));
+            const importData = periods.map(p => Number(p.import_diff) || 0);
+            const exportData = periods.map(p => Number(p.export_diff) || 0);
+            const solarData = periods.map(p => Number(p.solar_yield) || 0);
+            const consumptionData = periods.map(p => Number(p.consumption) || 0);
+
+            if (window.energyChartInstance) {
+                window.energyChartInstance.destroy();
+            }
+
+            window.energyChartInstance = new Chart(ctx, {
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Import (kWh)',
+                            label: 'Import',
                             data: importData,
-                            backgroundColor: 'rgba(251, 191, 36, 0.8)',
-                            borderColor: 'rgba(251, 191, 36, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
+                            borderColor: '#fbbf24',
+                            backgroundColor: 'rgba(251, 191, 36, 0.12)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#fbbf24'
                         },
                         {
-                            label: 'Export (kWh)',
+                            label: 'Export',
                             data: exportData,
-                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                            borderColor: 'rgba(16, 185, 129, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.12)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#34d399'
                         },
                         {
-                            label: 'Solar Generation (kWh)',
+                            label: 'Solar',
                             data: solarData,
-                            backgroundColor: 'rgba(251, 146, 60, 0.8)',
-                            borderColor: 'rgba(251, 146, 60, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
+                            borderColor: '#fb923c',
+                            backgroundColor: 'rgba(251, 146, 60, 0.12)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#fb923c'
                         },
                         {
-                            label: 'Consumption (kWh)',
+                            label: 'Consumption',
                             data: consumptionData,
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.12)',
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#60a5fa'
                         }
                     ]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     plugins: {
+                        title: {
+                            display: true,
+                            text: 'Energy overview by period',
+                            color: '#e2e8f0',
+                            font: { size: 14, weight: '600' },
+                            padding: { top: 8, bottom: 12 }
+                        },
                         legend: {
                             position: 'top',
                             labels: {
                                 color: '#cbd5e1',
                                 font: { size: 12, weight: '500' },
-                                padding: 15,
+                                padding: 16,
                                 usePointStyle: true
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                            titleColor: '#e2e8f0',
-                            bodyColor: '#cbd5e1',
+                            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#e2e8f0',
                             borderColor: '#475569',
                             borderWidth: 1,
                             padding: 12,
-                            cornerRadius: 8
+                            cornerRadius: 8,
+                            displayColors: true
                         }
                     },
                     scales: {
                         x: {
-                            stacked: false,
                             grid: {
-                                color: 'rgba(71, 85, 105, 0.1)',
+                                color: 'rgba(148, 163, 184, 0.08)',
                                 drawBorder: false
                             },
                             ticks: {
@@ -117,14 +159,22 @@
                             }
                         },
                         y: {
-                            stacked: false,
+                            beginAtZero: false,
                             grid: {
-                                color: 'rgba(71, 85, 105, 0.1)',
+                                color: 'rgba(148, 163, 184, 0.08)',
                                 drawBorder: false
                             },
                             ticks: {
                                 color: '#94a3b8',
-                                font: { size: 11 }
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    return value + ' kWh';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'kWh',
+                                color: '#94a3b8'
                             }
                         }
                     }
@@ -133,28 +183,25 @@
         }
 
         function switchTab(tabName) {
-            // Hide all tab contents
             document.getElementById('table-tab').classList.add('hidden');
             document.getElementById('chart-tab').classList.add('hidden');
 
-            // Remove active state from all tabs
             document.getElementById('table-btn').classList.remove('border-blue-500', 'text-white');
             document.getElementById('chart-btn').classList.remove('border-blue-500', 'text-white');
+            document.getElementById('table-btn').classList.add('text-slate-400');
+            document.getElementById('chart-btn').classList.add('text-slate-400');
 
-            // Add active state to clicked tab
+            document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
             document.getElementById(tabName + '-btn').classList.add('border-blue-500', 'text-white');
 
-            // Show selected tab content
             document.getElementById(tabName + '-tab').classList.remove('hidden');
 
-            // Initialize chart when tab is switched
             if (tabName === 'chart') {
-                setTimeout(initChart, 100);
+                setTimeout(initChart, 80);
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize chart data from the page
             const tableData = document.querySelectorAll('[data-period]');
             window.chartData = Array.from(tableData).map(row => ({
                 start: row.getAttribute('data-start'),
@@ -163,6 +210,15 @@
                 solar_yield: row.getAttribute('data-solar'),
                 consumption: row.getAttribute('data-consumption')
             }));
+
+            if (!window.chartData.length) {
+                const chartEmpty = document.getElementById('chart-empty');
+                const chartWrap = document.getElementById('chart-wrap');
+                if (chartEmpty) chartEmpty.classList.remove('hidden');
+                if (chartWrap) chartWrap.classList.add('hidden');
+            } else {
+                initChart();
+            }
         });
     </script>
 </head>
@@ -181,7 +237,6 @@
         </header>
 
         <main class="space-y-8">
-            <!-- Form Card -->
             <section class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl shadow-slate-950/30">
                 <div class="border-b border-slate-700 bg-slate-800/80 px-5 py-4 sm:px-6">
                     <h2 class="text-lg font-semibold text-white">Add new reading</h2>
@@ -257,9 +312,7 @@
 
             <div id="feedback" class="min-h-[1rem]"></div>
 
-            <!-- Tabs Section -->
             <section class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl shadow-slate-950/30">
-                <!-- Tab Buttons -->
                 <div class="border-b border-slate-700 bg-slate-800/50 px-5 py-4 sm:px-6">
                     <div class="flex gap-4">
                         <button
@@ -279,7 +332,6 @@
                     </div>
                 </div>
 
-                <!-- Table Tab Content -->
                 <div id="table-tab" class="p-5 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">Period Breakdown</h2>
                     <p class="mb-4 text-sm text-slate-400">Review your recent energy history</p>
@@ -288,16 +340,16 @@
                     </div>
                 </div>
 
-                <!-- Chart Tab Content -->
                 <div id="chart-tab" class="hidden p-5 sm:p-6">
-                    <h2 class="mb-4 text-lg font-semibold text-white">Energy Analysis</h2>
-                    <p class="mb-6 text-sm text-slate-400">Visual representation of your energy metrics</p>
-                    <div class="rounded-xl border border-slate-700 bg-slate-800/50 p-6">
-                        <canvas id="energyChart" height="80"></canvas>
+                    <div id="chart-wrap" class="rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:p-6">
+                        <canvas id="energyChart" height="220"></canvas>
+                    </div>
+                    <div id="chart-empty" class="hidden rounded-xl border border-dashed border-slate-600 bg-slate-800/40 p-8 text-center">
+                        <p class="text-base font-medium text-slate-200">No energy data available yet.</p>
+                        <p class="mt-2 text-sm text-slate-400">Add a reading to generate your chart.</p>
                     </div>
                 </div>
 
-                <!-- Hidden data attributes for chart -->
                 % for p in periods:
                 <div data-period="true" data-start="{{p.start}}" data-import="{{p.import_diff}}" data-export="{{p.export_diff}}" data-solar="{{p.solar_yield}}" data-consumption="{{p.consumption}}" class="hidden"></div>
                 % end
