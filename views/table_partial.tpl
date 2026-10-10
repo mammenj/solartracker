@@ -11,11 +11,11 @@
                         <tr class="border-b border-slate-700 bg-slate-800/80">
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Period</th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Duration</th>
-                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Import</th>
-                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Export</th>
+                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Imported</th>
+                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Exported</th>
                             <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Solar</th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Grid Balance</th>
-                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Consumption</th>
+                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Used</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,11 +83,11 @@
 
                 <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Import</span>
+                        <span class="text-slate-400">Imported</span>
                         <span class="font-medium text-amber-400">+{{f"{p.import_diff:.2f}"}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Export</span>
+                        <span class="text-slate-400">Exported</span>
                         <span class="font-medium text-emerald-400">+{{f"{p.export_diff:.2f}"}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between">
@@ -109,7 +109,7 @@
                         % end
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Consumption</span>
+                        <span class="text-slate-400">Used</span>
                         <div class="text-right">
                             <div class="font-medium text-slate-200">{{f"{p.consumption:.2f}"}} kWh</div>
                             <div class="text-[11px] text-slate-500">{{f"{p.avg_daily_consumption:.2f}"}}/day</div>
@@ -127,11 +127,11 @@
                         <span class="font-medium text-slate-200">{{ "%.2f" % totals['total_days']}} days</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Import</span>
+                        <span class="text-slate-400">Imported</span>
                         <span class="font-medium text-amber-400">{{ "%.2f" % totals['total_import']}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Export</span>
+                        <span class="text-slate-400">Exported</span>
                         <span class="font-medium text-emerald-400">{{ "%.2f" % totals['total_export']}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between">
@@ -153,7 +153,7 @@
                         % end
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Consumption</span>
+                        <span class="text-slate-400">Used</span>
                         <span class="font-medium text-slate-200">{{ "%.2f" % totals['total_consumption']}} kWh</span>
                     </div>
                 </div>
