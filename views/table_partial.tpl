@@ -13,8 +13,8 @@
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Duration</th>
                             <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Import</th>
                             <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Export</th>
-                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Solar Yield</th>
-                            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Grid Net</th>
+                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Solar</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Grid Balance</th>
                             <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-400">Consumption</th>
                         </tr>
                     </thead>
@@ -91,11 +91,11 @@
                         <span class="font-medium text-emerald-400">+{{f"{p.export_diff:.2f}"}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Solar Yield</span>
+                        <span class="text-slate-400">Solar</span>
                         <span class="font-medium text-yellow-400">+{{f"{p.solar_yield:.2f}"}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-slate-700 pt-2">
-                        <span class="text-slate-400">Grid Net</span>
+                        <span class="text-slate-400">Grid Balance</span>
                         % if p.net_balance >= 0:
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-300">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
@@ -135,11 +135,11 @@
                         <span class="font-medium text-emerald-400">{{ "%.2f" % totals['total_export']}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-400">Solar Yield</span>
+                        <span class="text-slate-400">Solar</span>
                         <span class="font-medium text-yellow-400">{{ "%.2f" % totals['total_solar']}} kWh</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-slate-700 pt-2">
-                        <span class="text-slate-400">Grid Net</span>
+                        <span class="text-slate-400">Grid Balance</span>
                         % if totals['total_balance'] >= 0:
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-300">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
