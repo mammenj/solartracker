@@ -3,10 +3,10 @@ from pathlib import Path
 
 import bottle
 from bottle import Bottle, request, run, template
-from libsolar import MeterReading, ReadingPeriod, TotalsDict, EnergyExtrapolator
-from libsolar_sqlite import MeterReadingStore
 
 from config import load_config
+from libsolar import EnergyExtrapolator, MeterReading, ReadingPeriod, TotalsDict
+from libsolar_sqlite import MeterReadingStore
 
 # Web App Setup
 app = Bottle()
