@@ -250,12 +250,17 @@
         function switchTab(tabName) {
             document.getElementById('table-tab').classList.add('hidden');
             document.getElementById('chart-tab').classList.add('hidden');
+            document.getElementById('dbdata-tab').classList.add('hidden');
 
             document.getElementById('table-btn').classList.remove('border-blue-500', 'text-white');
             document.getElementById('chart-btn').classList.remove('border-blue-500', 'text-white');
+            document.getElementById('dbdata-btn').classList.remove('border-blue-500', 'text-white');
+
             document.getElementById('table-btn').classList.add('text-slate-400');
             document.getElementById('chart-btn').classList.add('text-slate-400');
+            document.getElementById('dbdata-btn').classList.add('text-slate-400');
 
+            document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
             document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
             document.getElementById(tabName + '-btn').classList.add('border-blue-500', 'text-white');
 
@@ -272,26 +277,7 @@
         }
 
 
-        function switchTab2(tabName) {
-            document.getElementById('table-tab').classList.add('hidden');
-            document.getElementById('chart-tab').classList.add('hidden');
-
-            document.getElementById('table-btn').classList.remove('border-blue-500', 'text-white');
-            document.getElementById('chart-btn').classList.remove('border-blue-500', 'text-white');
-            document.getElementById('table-btn').classList.add('text-slate-400');
-            document.getElementById('chart-btn').classList.add('text-slate-400');
-
-            document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
-            document.getElementById(tabName + '-btn').classList.add('border-blue-500', 'text-white');
-
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-
-            if (tabName === 'chart') {
-                setTimeout(initChart, 80);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function () {
             const tableData = document.querySelectorAll('[data-period]');
             window.chartData = Array.from(tableData).map(row => {
                 let rawStart = row.getAttribute('data-start') || '';
@@ -415,6 +401,11 @@
                             class="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-slate-400 transition hover:text-slate-300">
                             📈 Chart
                         </button>
+                        <button id="dbdata-btn" onclick="switchTab('dbdata')"
+                            class="border-b-2 border-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            📊 DB Data
+                        </button>
+
                     </div>
                 </div>
 
@@ -423,6 +414,13 @@
                     <p class="mb-4 text-sm text-slate-400">Review your recent energy history</p>
                     <div id="history-table">
                         % include('table_partial.tpl', periods=periods)
+                    </div>
+                </div>
+                <div id="dbdata-tab" class="p-5 sm:p-6">
+                    <h2 class="mb-4 text-lg font-semibold text-white">Data in DB</h2>
+                    <p class="mb-4 text-sm text-slate-400">Review your readings recorded</p>
+                    <div id="history-table">
+                        % include('table_readings.tpl', readings=readings)
                     </div>
                 </div>
 
