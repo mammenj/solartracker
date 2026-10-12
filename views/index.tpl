@@ -313,7 +313,6 @@
             }
         });
 
-        ///boot
 
     </script>
 </head>
@@ -395,14 +394,14 @@
                     <div class="flex gap-4">
                         <button id="table-btn" onclick="switchTab('table')"
                             class="border-b-2 border-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
-                            📊 Data Table
+                            📊 Period Data 
                         </button>
                         <button id="chart-btn" onclick="switchTab('chart')"
-                            class="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-slate-400 transition hover:text-slate-300">
+                            class="border-b-2 border-white-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
                             📈 Chart
                         </button>
                         <button id="dbdata-btn" onclick="switchTab('dbdata')"
-                            class="border-b-2 border-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            class="border-b-2 border-whtie-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
                             📊 DB Data
                         </button>
 
@@ -416,7 +415,7 @@
                         % include('table_partial.tpl', periods=periods)
                     </div>
                 </div>
-                <div id="dbdata-tab" class="p-5 sm:p-6">
+                <div id="dbdata-tab" class="hidden p-5 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">Data in DB</h2>
                     <p class="mb-4 text-sm text-slate-400">Review your readings recorded</p>
                     <div id="history-table">

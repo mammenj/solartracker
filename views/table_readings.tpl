@@ -1,6 +1,6 @@
 % if not readings:
     <div class="px-5 py-8 text-center sm:px-6">
-        <p class="text-sm text-slate-400 italic">No completed periods available in database.</p>
+        <p class="text-sm text-slate-400 italic">No periods available in database.</p>
     </div>
 % else:
     <div class="p-3 sm:p-5">
