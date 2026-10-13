@@ -75,12 +75,10 @@
             const weeklyConsumptionData = periods.map(p => Number(p.weekly_consumption) || 0);
 
             // <-- Moved console.logs here after variables exist
-            console.log("Parsed Import Data:", importData);
-            console.log("Parsed Solar Data:", solarData);
+//            console.log("Parsed Import Data:", importData);
+//            console.log("Parsed Solar Data:", solarData);
 
-            // ... rest of your chart initialization code
 
-            ////15:07:54
             if (window.energyChartInstance) {
                 window.energyChartInstance.destroy();
             }
@@ -312,8 +310,6 @@
                 initChart();
             }
         });
-
-
     </script>
 </head>
 
