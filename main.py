@@ -32,7 +32,9 @@ def get_periods() -> list[ReadingPeriod]:
 
 def get_readings() -> list[MeterReading]:
     """Get all reading periods from the database."""
-    return store.load_all()
+    r = store.load_all()
+    r.sort(key=lambda r: r.date, reverse=True)
+    return r
 
 
 def get_periods_with_weekly() -> list[dict]:
