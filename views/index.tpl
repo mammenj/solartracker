@@ -392,7 +392,11 @@
                 class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl shadow-slate-950/30">
                 <div class="border-b border-slate-700 bg-slate-800/50 px-5 py-4 sm:px-6">
                     <div class="flex gap-4">
-                        <button id="table-btn" onclick="switchTab('table')"
+                       <button id="dbdata-btn" onclick="switchTab('dbdata')"
+                            class="border-b-2 border-whtie-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            📊 DB Data
+                        </button>
+                       <button id="table-btn" onclick="switchTab('table')"
                             class="border-b-2 border-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
                             📊 Period Data 
                         </button>
@@ -400,14 +404,17 @@
                             class="border-b-2 border-white-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
                             📈 Chart
                         </button>
-                        <button id="dbdata-btn" onclick="switchTab('dbdata')"
-                            class="border-b-2 border-whtie-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
-                            📊 DB Data
-                        </button>
-
+                        
                     </div>
                 </div>
 
+              <div id="dbdata-tab" class="hidden p-5 sm:p-6">
+                    <h2 class="mb-4 text-lg font-semibold text-white">Data in DB</h2>
+                    <p class="mb-4 text-sm text-slate-400">Review your readings recorded</p>
+                    <div id="history-table">
+                        % include('table_readings.tpl', readings=readings)
+                    </div>
+                </div>
                 <div id="table-tab" class="p-5 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">Period Breakdown</h2>
                     <p class="mb-4 text-sm text-slate-400">Review your recent energy history</p>
@@ -415,14 +422,6 @@
                         % include('table_partial.tpl', periods=periods)
                     </div>
                 </div>
-                <div id="dbdata-tab" class="hidden p-5 sm:p-6">
-                    <h2 class="mb-4 text-lg font-semibold text-white">Data in DB</h2>
-                    <p class="mb-4 text-sm text-slate-400">Review your readings recorded</p>
-                    <div id="history-table">
-                        % include('table_readings.tpl', readings=readings)
-                    </div>
-                </div>
-
                 <div id="chart-tab" class="hidden p-5 sm:p-6">
                     <div id="chart-wrap" class="rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:p-6">
                         <canvas id="energyChart" height="220"></canvas>
