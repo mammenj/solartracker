@@ -3,10 +3,10 @@
         <p class="text-sm text-slate-400 italic">No periods available in database.</p>
     </div>
 % else:
-    <div class="p-3 sm:p-5">
-        <div class="hidden md:block">
-            <div class="overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
-                <table class="w-full border-collapse text-sm">
+    <div class="p-2 sm:p-5">
+        <div class="w-full">
+            <div class="w-full overflow-x-auto rounded-xl border border-slate-700 bg-slate-900/90">
+                <table class="w-full table-fixed border-collapse text-[11px] text-sm">
                     <thead>
                         <tr class="border-b border-slate-700 bg-slate-800/80">
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Date</th>
