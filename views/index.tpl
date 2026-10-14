@@ -84,7 +84,7 @@
             }
 
             const datasets = [
-                {
+/*                {
                     label: 'Import',
                     data: importData,
                     borderColor: '#fbbf24',
@@ -93,7 +93,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#fbbf24'
-                },
+                },*/
                 {
                     label: 'Import (7d)',
                     data: weeklyImportData,
@@ -105,7 +105,7 @@
                     pointBackgroundColor: '#fbbf24',
                     borderDash: [6, 6]
                 },
-                {
+                /*{
                     label: 'Export',
                     data: exportData,
                     borderColor: '#34d399',
@@ -114,7 +114,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#34d399'
-                },
+                },*/
                 {
                     label: 'Export (7d)',
                     data: weeklyExportData,
@@ -126,7 +126,7 @@
                     pointBackgroundColor: '#34d399',
                     borderDash: [6, 6]
                 },
-                {
+                /*{
                     label: 'Solar',
                     data: solarData,
                     borderColor: '#fb923c',
@@ -135,7 +135,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#fb923c'
-                },
+                },*/
                 {
                     label: 'Solar (7d)',
                     data: weeklySolarData,
@@ -147,7 +147,7 @@
                     pointBackgroundColor: '#fb923c',
                     borderDash: [6, 6]
                 },
-                {
+                /*{
                     label: 'Consumption',
                     data: consumptionData,
                     borderColor: '#60a5fa',
@@ -156,7 +156,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#60a5fa'
-                },
+                },*/
                 {
                     label: 'Consumption (7d)',
                     data: weeklyConsumptionData,
@@ -290,10 +290,10 @@
 
                 return {
                     start: rawStart,
-                    import_diff: row.getAttribute('data-import'),
-                    export_diff: row.getAttribute('data-export'),
-                    solar_yield: row.getAttribute('data-solar'),
-                    consumption: row.getAttribute('data-consumption'),
+//                    import_diff: row.getAttribute('data-import'),
+//                    export_diff: row.getAttribute('data-export'),
+//                    solar_yield: row.getAttribute('data-solar'),
+//                    consumption: row.getAttribute('data-consumption'),
                     weekly_import: row.getAttribute('data-weekly-import'),
                     weekly_export: row.getAttribute('data-weekly-export'),
                     weekly_solar: row.getAttribute('data-weekly-solar'),
