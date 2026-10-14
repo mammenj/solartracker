@@ -39,6 +39,35 @@ class MeterReadingStore:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
             conn.commit()
 
+    def load_by_page(self, last_id=None, page_size=5) -> list[MeterReading]:
+        """
+        Load all meter readings from the database by paging, sorted by date.
+
+        Returns:
+            List of MeterReading objects sorted by date.
+        """
+        readings = []
+        with sqlite3.connect(self.db_filepath) as conn:
+            cursor = conn.cursor()
+            if last_id is None:
+                cursor = conn.execute(
+                    "SELECT id, date, import, export, solar_gen FROM meter_records ORDER BY date ASC LIMIT ?",
+                    (page_size,),
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT id, date, import, export, solar_gen FROM meter_records WHERE id > ? ORDER BY date ASC LIMIT ?",
+                    (last_id, page_size),
+                )
+            for row in cursor.fetchall():
+                id, date_str, import_units, export_units, solar_units = row
+                print(" ID is --->", id)
+                date = datetime.strptime(date_str, "%Y-%m-%d")
+                readings.append(
+                    MeterReading(id, date, import_units, export_units, solar_units)
+                )
+        return readings
+
     def load_all(self) -> list[MeterReading]:
         """
         Load all meter readings from the database, sorted by date.
@@ -49,13 +78,13 @@ class MeterReadingStore:
         readings = []
         with sqlite3.connect(self.db_filepath) as conn:
             cursor = conn.execute(
-                "SELECT date, import, export, solar_gen FROM meter_records ORDER BY date ASC"
+                "SELECT id, date, import, export, solar_gen FROM meter_records ORDER BY date ASC"
             )
             for row in cursor.fetchall():
-                date_str, import_units, export_units, solar_units = row
+                id, date_str, import_units, export_units, solar_units = row
                 date = datetime.strptime(date_str, "%Y-%m-%d")
                 readings.append(
-                    MeterReading(date, import_units, export_units, solar_units)
+                    MeterReading(id, date, import_units, export_units, solar_units)
                 )
         return readings
 

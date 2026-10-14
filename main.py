@@ -25,9 +25,24 @@ store = MeterReadingStore(config.db_file)
 def get_periods() -> list[ReadingPeriod]:
     """Get all reading periods from the database."""
     readings = store.load_all()
-    return [
-        ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
-    ]
+    # return [
+    #    ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
+    # ]
+    return list(
+        reversed(
+            [
+                ReadingPeriod(readings[i - 1], readings[i])
+                for i in range(1, len(readings))
+            ]
+        )
+    )
+
+
+def get_readings() -> list[MeterReading]:
+    """Get all reading periods from the database."""
+    r = store.load_all()
+    r.sort(key=lambda r: r.date, reverse=True)
+    return r
 
 
 def get_periods_with_weekly() -> list[dict]:
@@ -101,10 +116,12 @@ def index():
     periods = get_periods()
     periods_with_weekly = get_periods_with_weekly()
     totals: TotalsDict = get_totals()
+    readings = get_readings()
     return template(
         "views/index.tpl",
         today=today,
         periods=periods,
+        readings=readings,
         periods_with_weekly=periods_with_weekly,
         totals=totals,
     )
@@ -121,7 +138,7 @@ def add_reading():
     except (ValueError, TypeError):
         return "<div class='alert-error'>❌ Invalid form input format. Please check numeric values.</div>"
 
-    new_reading = MeterReading(curr_date, curr_import, curr_export, curr_solar)
+    new_reading = MeterReading(0, curr_date, curr_import, curr_export, curr_solar)
     # removing validation
 
     is_valid, err_msg = validate_reading(new_reading)
@@ -141,6 +158,7 @@ def add_reading():
         "table_partial.tpl",
         periods_with_weekly=periods_with_weekly,
         periods=get_periods(),
+        readings=get_readings(),
         totals=get_totals(),
     )
 

@@ -75,18 +75,16 @@
             const weeklyConsumptionData = periods.map(p => Number(p.weekly_consumption) || 0);
 
             // <-- Moved console.logs here after variables exist
-            console.log("Parsed Import Data:", importData);
-            console.log("Parsed Solar Data:", solarData);
+//            console.log("Parsed Import Data:", importData);
+//            console.log("Parsed Solar Data:", solarData);
 
-            // ... rest of your chart initialization code
 
-            ////15:07:54
             if (window.energyChartInstance) {
                 window.energyChartInstance.destroy();
             }
 
             const datasets = [
-                {
+/*                {
                     label: 'Import',
                     data: importData,
                     borderColor: '#fbbf24',
@@ -95,7 +93,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#fbbf24'
-                },
+                },*/
                 {
                     label: 'Import (7d)',
                     data: weeklyImportData,
@@ -107,7 +105,7 @@
                     pointBackgroundColor: '#fbbf24',
                     borderDash: [6, 6]
                 },
-                {
+                /*{
                     label: 'Export',
                     data: exportData,
                     borderColor: '#34d399',
@@ -116,7 +114,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#34d399'
-                },
+                },*/
                 {
                     label: 'Export (7d)',
                     data: weeklyExportData,
@@ -128,7 +126,7 @@
                     pointBackgroundColor: '#34d399',
                     borderDash: [6, 6]
                 },
-                {
+                /*{
                     label: 'Solar',
                     data: solarData,
                     borderColor: '#fb923c',
@@ -137,7 +135,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#fb923c'
-                },
+                },*/
                 {
                     label: 'Solar (7d)',
                     data: weeklySolarData,
@@ -149,7 +147,7 @@
                     pointBackgroundColor: '#fb923c',
                     borderDash: [6, 6]
                 },
-                {
+                /*{
                     label: 'Consumption',
                     data: consumptionData,
                     borderColor: '#60a5fa',
@@ -158,7 +156,7 @@
                     tension: 0.35,
                     pointRadius: 4,
                     pointBackgroundColor: '#60a5fa'
-                },
+                },*/
                 {
                     label: 'Consumption (7d)',
                     data: weeklyConsumptionData,
@@ -250,12 +248,17 @@
         function switchTab(tabName) {
             document.getElementById('table-tab').classList.add('hidden');
             document.getElementById('chart-tab').classList.add('hidden');
+            document.getElementById('dbdata-tab').classList.add('hidden');
 
             document.getElementById('table-btn').classList.remove('border-blue-500', 'text-white');
             document.getElementById('chart-btn').classList.remove('border-blue-500', 'text-white');
+            document.getElementById('dbdata-btn').classList.remove('border-blue-500', 'text-white');
+
             document.getElementById('table-btn').classList.add('text-slate-400');
             document.getElementById('chart-btn').classList.add('text-slate-400');
+            document.getElementById('dbdata-btn').classList.add('text-slate-400');
 
+            document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
             document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
             document.getElementById(tabName + '-btn').classList.add('border-blue-500', 'text-white');
 
@@ -272,26 +275,7 @@
         }
 
 
-        function switchTab2(tabName) {
-            document.getElementById('table-tab').classList.add('hidden');
-            document.getElementById('chart-tab').classList.add('hidden');
-
-            document.getElementById('table-btn').classList.remove('border-blue-500', 'text-white');
-            document.getElementById('chart-btn').classList.remove('border-blue-500', 'text-white');
-            document.getElementById('table-btn').classList.add('text-slate-400');
-            document.getElementById('chart-btn').classList.add('text-slate-400');
-
-            document.getElementById(tabName + '-btn').classList.remove('text-slate-400');
-            document.getElementById(tabName + '-btn').classList.add('border-blue-500', 'text-white');
-
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-
-            if (tabName === 'chart') {
-                setTimeout(initChart, 80);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function () {
             const tableData = document.querySelectorAll('[data-period]');
             window.chartData = Array.from(tableData).map(row => {
                 let rawStart = row.getAttribute('data-start') || '';
@@ -306,10 +290,10 @@
 
                 return {
                     start: rawStart,
-                    import_diff: row.getAttribute('data-import'),
-                    export_diff: row.getAttribute('data-export'),
-                    solar_yield: row.getAttribute('data-solar'),
-                    consumption: row.getAttribute('data-consumption'),
+//                    import_diff: row.getAttribute('data-import'),
+//                    export_diff: row.getAttribute('data-export'),
+//                    solar_yield: row.getAttribute('data-solar'),
+//                    consumption: row.getAttribute('data-consumption'),
                     weekly_import: row.getAttribute('data-weekly-import'),
                     weekly_export: row.getAttribute('data-weekly-export'),
                     weekly_solar: row.getAttribute('data-weekly-solar'),
@@ -326,9 +310,6 @@
                 initChart();
             }
         });
-
-        ///boot
-
     </script>
 </head>
 
@@ -409,23 +390,30 @@
                     <div class="flex gap-4">
                         <button id="table-btn" onclick="switchTab('table')"
                             class="border-b-2 border-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
-                            📊 Data Table
+                            📊 Period Data 
                         </button>
                         <button id="chart-btn" onclick="switchTab('chart')"
-                            class="border-b-2 border-transparent px-4 py-2 text-sm font-medium text-slate-400 transition hover:text-slate-300">
+                            class="border-b-2 border-white-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
                             📈 Chart
                         </button>
+                        <button id="dbdata-btn" onclick="switchTab('dbdata')"
+                            class="border-b-2 border-whtie-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            📊 DB Data
+                        </button>
+                        
                     </div>
                 </div>
 
+              <div id="dbdata-tab" class="hidden p-5 sm:p-6">
+                    <div id="history-table">
+                        % include('table_readings.tpl', readings=readings)
+                    </div>
+                </div>
                 <div id="table-tab" class="p-5 sm:p-6">
-                    <h2 class="mb-4 text-lg font-semibold text-white">Period Breakdown</h2>
-                    <p class="mb-4 text-sm text-slate-400">Review your recent energy history</p>
                     <div id="history-table">
                         % include('table_partial.tpl', periods=periods)
                     </div>
                 </div>
-
                 <div id="chart-tab" class="hidden p-5 sm:p-6">
                     <div id="chart-wrap" class="rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:p-6">
                         <canvas id="energyChart" height="220"></canvas>
