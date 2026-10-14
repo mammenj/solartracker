@@ -405,15 +405,11 @@
                 </div>
 
               <div id="dbdata-tab" class="hidden p-5 sm:p-6">
-                    <h2 class="mb-4 text-lg font-semibold text-white">Data in DB</h2>
-                    <p class="mb-4 text-sm text-slate-400">Review your readings recorded</p>
                     <div id="history-table">
                         % include('table_readings.tpl', readings=readings)
                     </div>
                 </div>
                 <div id="table-tab" class="p-5 sm:p-6">
-                    <h2 class="mb-4 text-lg font-semibold text-white">Period Breakdown</h2>
-                    <p class="mb-4 text-sm text-slate-400">Review your recent energy history</p>
                     <div id="history-table">
                         % include('table_partial.tpl', periods=periods)
                     </div>

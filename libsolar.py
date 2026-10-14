@@ -17,32 +17,17 @@ class MeterReading:
 
     def __init__(
         self,
+        id: int,
         date: datetime,
         import_units: float,
         export_units: float,
         solar_units: float,
     ):
+        self.id = id
         self.date = date
         self.import_units = import_units
         self.export_units = export_units
         self.solar_units = solar_units
-
-    @classmethod
-    def from_file_line(cls, line: str) -> MeterReading | None:
-        parts = line.strip().split("|")
-        if len(parts) < 4:
-            return None
-        try:
-            date = datetime.strptime(parts[0], "%Y-%m-%d")
-            imp = float(parts[1])
-            exp = float(parts[2])
-            solar = float(parts[3])
-            return cls(date, imp, exp, solar)
-        except ValueError:
-            return None
-
-    def to_file_line(self) -> str:
-        return f"{self.date.strftime('%Y-%m-%d')}|{self.import_units:.2f}|{self.export_units:.2f}|{self.solar_units:.2f}\n"
 
 
 class ReadingPeriod:
@@ -132,22 +117,6 @@ class SolarTracker:
     def __init__(self, data_filepath: Path):
         self.filepath = data_filepath
         self.history: list[MeterReading] = []
-        self._load_from_file()
-
-    def _load_from_file(self) -> None:
-        self.history.clear()
-        if not self.filepath.exists():
-            return
-        with open(self.filepath, "r", encoding="utf-8") as f:
-            for line in f:
-                reading = MeterReading.from_file_line(line)
-                if reading:
-                    self.history.append(reading)
-        self.history.sort(key=lambda r: r.date)
-
-    def _save_all_to_file(self) -> None:
-        with open(self.filepath, "w", encoding="utf-8") as f:
-            f.writelines(reading.to_file_line() for reading in self.history)
 
     def validate_reading(self, new_reading: MeterReading) -> tuple[bool, str]:
         prior_readings = [r for r in self.history if r.date < new_reading.date]
@@ -172,31 +141,6 @@ class SolarTracker:
             )
 
         return True, ""
-
-    def save_or_update_reading(
-        self, reading: MeterReading
-    ) -> tuple[bool, ReadingPeriod | None]:
-        existing_index = next(
-            (
-                i
-                for i, r in enumerate(self.history)
-                if r.date.date() == reading.date.date()
-            ),
-            None,
-        )
-        is_update = existing_index is not None
-
-        if is_update:
-            self.history[existing_index] = reading
-        else:
-            self.history.append(reading)
-
-        self.history.sort(key=lambda r: r.date)
-        self._save_all_to_file()
-
-        idx = self.history.index(reading)
-        period = ReadingPeriod(self.history[idx - 1], reading) if idx > 0 else None
-        return is_update, period
 
     def get_periods(self) -> list[ReadingPeriod]:
         return [
