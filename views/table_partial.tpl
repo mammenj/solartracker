@@ -1,12 +1,12 @@
 % if not periods:
     <div class="px-5 py-8 text-center sm:px-6">
-        <p class="text-sm text-slate-400 italic">No completed periods available in database.</p>
+        <p class="text-[10px] text-slate-400 italic">No completed periods available in database.</p>
     </div>
 % else:
     <div class="p-3 sm:p-5">
         <div class="hidden md:block">
             <div class="overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
-                <table class="w-full border-collapse text-sm">
+                <table class="w-full border-collapse text-[10px]">
                     <thead>
                         <tr class="border-b border-slate-700 bg-slate-800/80">
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Period</th>
@@ -77,11 +77,11 @@
             % for p in periods:
             <div class="rounded-xl border border-slate-700 bg-slate-900/80 p-4 shadow-sm shadow-slate-950/10">
                 <div class="mb-3 flex items-center justify-between border-b border-slate-700 pb-2">
-                    <span class="text-sm font-semibold text-slate-100">{{p.start.date.strftime('%d/%m/%Y')}} - {{p.end.date.strftime('%d/%m/%Y')}}</span>
+                    <span class="text-[10px] font-semibold text-slate-100">{{p.start.date.strftime('%d/%m/%Y')}} - {{p.end.date.strftime('%d/%m/%Y')}}</span>
                     <span class="text-xs text-slate-500">{{p.days}}d</span>
                 </div>
 
-                <div class="space-y-2 text-sm">
+                <div class="space-y-2 text-[10px]">
                     <div class="flex items-center justify-between">
                         <span class="text-slate-400">Imported</span>
                         <span class="font-medium text-amber-400">+{{f"{p.import_diff:.2f}"}} kWh</span>
@@ -120,8 +120,8 @@
             % end
 
             <div class="rounded-xl border-2 border-slate-600 bg-slate-800/90 p-4">
-                <div class="mb-2 text-sm font-semibold text-slate-100">Total</div>
-                <div class="space-y-2 text-sm">
+                <div class="mb-2 text-[10px] font-semibold text-slate-100">Total</div>
+                <div class="space-y-2 text-[10px]">
                     <div class="flex items-center justify-between">
                         <span class="text-slate-400">Duration</span>
                         <span class="font-medium text-slate-200">{{ "%.2f" % totals['total_days']}} days</span>

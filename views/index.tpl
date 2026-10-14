@@ -102,8 +102,7 @@
                     fill: false,
                     tension: 0.35,
                     pointRadius: 2,
-                    pointBackgroundColor: '#fbbf24',
-                    borderDash: [6, 6]
+                    pointBackgroundColor: '#fbbf24'
                 },
                 /*{
                     label: 'Export',
@@ -123,8 +122,7 @@
                     fill: false,
                     tension: 0.35,
                     pointRadius: 2,
-                    pointBackgroundColor: '#34d399',
-                    borderDash: [6, 6]
+                    pointBackgroundColor: '#34d399'
                 },
                 /*{
                     label: 'Solar',
@@ -144,8 +142,7 @@
                     fill: false,
                     tension: 0.35,
                     pointRadius: 2,
-                    pointBackgroundColor: '#fb923c',
-                    borderDash: [6, 6]
+                    pointBackgroundColor: '#fb923c'
                 },
                 /*{
                     label: 'Consumption',
@@ -165,8 +162,8 @@
                     fill: false,
                     tension: 0.35,
                     pointRadius: 2,
-                    pointBackgroundColor: '#60a5fa',
-                    borderDash: [6, 6]
+                    pointBackgroundColor: '#60a5fa'
+                    //borderDash: [6, 6]
                 }
             ];
 
@@ -319,12 +316,12 @@
             class="mb-8 rounded-2xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/30 backdrop-blur-sm">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-xs font-medium uppercase tracking-[0.18em] text-blue-400">Energy dashboard</p>
+                    <p class="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-400">Energy dashboard</p>
                     <h1 class="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">☀️ Solar & Grid Meter
                         Tracker</h1>
                 </div>
                 <div
-                    class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                    class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-normal text-emerald-300">
                     Live overview
                 </div>
             </div>
@@ -335,46 +332,46 @@
                 class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-xl shadow-slate-950/30">
                 <div class="border-b border-slate-700 bg-slate-800/80 px-5 py-4 sm:px-6">
                     <h2 class="text-lg font-semibold text-white">Add new reading</h2>
-                    <p class="mt-1 text-sm text-slate-400">Track cumulative energy consumption and generation</p>
+                    <p class="mt-1 text-[10px] text-slate-400">Track cumulative energy consumption and generation</p>
                 </div>
 
                 <div class="p-5 sm:p-6">
                     <form hx-post="/readings" hx-target="#feedback" hx-swap="innerHTML" class="space-y-5">
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                             <div class="flex flex-col gap-2">
-                                <label for="date" class="text-sm font-medium text-slate-300">Reading Date</label>
+                                <label for="date" class="text-[10px] font-normal text-slate-300">Reading Date</label>
                                 <input type="date" id="date" name="date" value="{{today}}" required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-[10px] text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
                             </div>
 
                             <div class="flex flex-col gap-2">
-                                <label for="import_units" class="text-sm font-medium text-slate-300">Cumulative Import
+                                <label for="import_units" class="text-[10px] font-normal text-slate-300">Cumulative Import
                                     (kWh)</label>
                                 <input type="number" step="0.01" id="import_units" name="import_units"
                                     placeholder="0.00" required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-[10px] text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
                             </div>
 
                             <div class="flex flex-col gap-2">
-                                <label for="export_units" class="text-sm font-medium text-slate-300">Cumulative Export
+                                <label for="export_units" class="text-[10px] font-normal text-slate-300">Cumulative Export
                                     (kWh)</label>
                                 <input type="number" step="0.01" id="export_units" name="export_units"
                                     placeholder="0.00" required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-[10px] text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
                             </div>
 
                             <div class="flex flex-col gap-2">
-                                <label for="solar_units" class="text-sm font-medium text-slate-300">Cumulative Solar
+                                <label for="solar_units" class="text-[10px] font-normal text-slate-300">Cumulative Solar
                                     (kWh)</label>
                                 <input type="number" step="0.01" id="solar_units" name="solar_units" placeholder="0.00"
                                     required
-                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-sm text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
+                                    class="rounded-xl border border-slate-600 bg-slate-950/80 px-3 py-2.5 text-[10px] text-white shadow-inner shadow-slate-950/40 transition placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20" />
                             </div>
                         </div>
 
                         <div class="flex justify-start">
                             <button type="submit"
-                                class="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-400 hover:to-blue-500 active:scale-95">
+                                class="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-2.5 text-[10px] font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-400 hover:to-blue-500 active:scale-95">
                                 Save Reading
                             </button>
                         </div>
@@ -389,15 +386,15 @@
                 <div class="border-b border-slate-700 bg-slate-800/50 px-5 py-4 sm:px-6">
                     <div class="flex gap-4">
                         <button id="table-btn" onclick="switchTab('table')"
-                            class="border-b-2 border-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            class="border-b-2 border-blue-500 px-4 py-2 text-[10px] font-medium text-white transition hover:text-slate-300">
                             📊 Period Data 
                         </button>
                         <button id="chart-btn" onclick="switchTab('chart')"
-                            class="border-b-2 border-white-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            class="border-b-2 border-white-500 px-4 py-2 text-[10px] font-medium text-white transition hover:text-slate-300">
                             📈 Chart
                         </button>
                         <button id="dbdata-btn" onclick="switchTab('dbdata')"
-                            class="border-b-2 border-whtie-500 px-4 py-2 text-sm font-medium text-white transition hover:text-slate-300">
+                            class="border-b-2 border-whtie-500 px-4 py-2 text-[10px] font-medium text-white transition hover:text-slate-300">
                             📊 DB Data
                         </button>
                         
@@ -420,8 +417,8 @@
                     </div>
                     <div id="chart-empty"
                         class="hidden rounded-xl border border-dashed border-slate-600 bg-slate-800/40 p-8 text-center">
-                        <p class="text-base font-medium text-slate-200">No energy data available yet.</p>
-                        <p class="mt-2 text-sm text-slate-400">Add a reading to generate your chart.</p>
+                        <p class="text-base font-normal text-slate-200">No energy data available yet.</p>
+                        <p class="mt-2 text-[10px] text-slate-400">Add a reading to generate your chart.</p>
                     </div>
                 </div>
                 % for p in periods_with_weekly:
