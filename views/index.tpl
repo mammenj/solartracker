@@ -52,8 +52,8 @@
             const chartWrap = document.getElementById('chart-wrap');
             const periods = window.chartData || [];
 
-            console.log("Loaded chartData length:", periods.length);
-            console.log("Raw period items:", periods);
+            //console.log("Loaded chartData length:", periods.length);
+            //console.log("Raw period items:", periods);
 
             if (!ctx) return;
             if (!periods.length) {
