@@ -119,7 +119,7 @@ def index():
     totals: TotalsDict = get_totals()
     readings = get_readings()
     return template(
-        "views/index.tpl",
+        "views/index.html",
         today=today,
         periods=periods,
         readings=readings,
@@ -156,7 +156,7 @@ def add_reading():
     periods_with_weekly = get_periods_with_weekly()
 
     rendered_table = template(
-        "table_partial.tpl",
+        "views/table_partial.html",
         periods_with_weekly=periods_with_weekly,
         periods=get_periods(),
         readings=get_readings(),
