@@ -87,8 +87,9 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
         return True, ""
 
     last = readings[-1]
+    print("last record", last.date)
     is_present = any(r.date == new_reading.date for r in readings)
-    print("date is is_presenti >>>>>>>>", is_present)
+    print("date is present >>>>>>>>", is_present)
     if is_present:
         return True, "Updating"
     if new_reading.import_units < last.import_units:
