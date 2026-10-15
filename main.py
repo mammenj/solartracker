@@ -111,7 +111,7 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
     return True, ""
 
 
-@app.get("/")
+@app.get("/old")
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
     periods = get_periods()
@@ -126,6 +126,23 @@ def index():
         periods_with_weekly=periods_with_weekly,
         totals=totals,
     )
+
+@app.get("/")
+def index():
+    # today = datetime.now().strftime("%Y-%m-%d")
+    # periods = get_periods()
+    # periods_with_weekly = get_periods_with_weekly()
+    # totals: TotalsDict = get_totals()
+    # readings = get_readings()
+    return template(
+        "templates/base.html",
+        # today=today,
+        # periods=periods,
+        # readings=readings,
+        # periods_with_weekly=periods_with_weekly,
+        # totals=totals,
+    )
+
 
 
 @app.post("/readings")
