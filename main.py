@@ -133,15 +133,15 @@ def index():
     # today = datetime.now().strftime("%Y-%m-%d")
     # periods = get_periods()
     # periods_with_weekly = get_periods_with_weekly()
-    # totals: TotalsDict = get_totals()
-    # readings = get_readings()
+    totals: TotalsDict = get_totals()
+    readings = get_readings()
     return template(
         "templates/base.html",
         # today=today,
         # periods=periods,
-        # readings=readings,
+        readings=readings,
         # periods_with_weekly=periods_with_weekly,
-        # totals=totals,
+        totals=totals,
     )
 
 @app.get("/app/dashboard")
@@ -149,15 +149,15 @@ def dashboard():
     # today = datetime.now().strftime("%Y-%m-%d")
     # periods = get_periods()
     # periods_with_weekly = get_periods_with_weekly()
-    # totals: TotalsDict = get_totals()
-    # readings = get_readings()
+    totals: TotalsDict = get_totals()
+    readings = get_readings()
     return template(
         "templates/dashboard.html",
         # today=today,
         # periods=periods,
-        # readings=readings,
+        readings=readings,
         # periods_with_weekly=periods_with_weekly,
-        # totals=totals,
+        totals=totals,
     )
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 

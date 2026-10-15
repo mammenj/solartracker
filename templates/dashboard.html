@@ -5,12 +5,14 @@
         <!-- Total Readings Count -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
-                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Readings</div>
+                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Days</div>
                 <div class="text-xl sm:text-2xl font-bold text-slate-100 mt-1">
-                    <!-- %# len .Overview.Records  <span class="text-xs sm:text-sm font-normal text-slate-400">entries</span> -->
+                    <!-- %# len .Overview.Records  -->
+                {{ "%2d" % totals['total_days']}} 
+                  <span class="text-xs sm:text-sm font-normal text-slate-400"> days</span>  
                 </div>
             </div>
-            <div class="text-[10px] sm:text-xs text-slate-500 mt-1">Logged in filestore</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 mt-1">Logged in DB</div>
         </div>
 
         <!-- Total Export Generated -->
@@ -19,7 +21,9 @@
                 <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Export</div>
                 <div class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
                     <!-- %# printf "%.2f" .Overview.TotalExport  -->
-                    <span class="text-xs sm:text-sm font-normal text-slate-400">kWh</span>
+                    {{ "%.2f" % totals['total_export']}} 
+                    <span class="text-xs sm:text-sm font-normal text-slate-400">kWh
+</span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-emerald-500/80 mt-1">Cumulative grid export</div>
@@ -31,6 +35,7 @@
                 <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Import</div>
                 <div class="text-xl sm:text-2xl font-bold text-red-400 mt-1">
                     <!-- %# printf "%.2f" .Overview.TotalImport  -->
+                    {{ "%.2f" % totals['total_import']}}
                     <span class="text-xs sm:text-sm font-normal text-slate-400">kWh</span>
                 </div>
             </div>
@@ -42,8 +47,9 @@
             <div>
                 <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Net Balance</div>
                 <div class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
-                    <!-- %# printf "%+.2f" .Overview.NetConsumption  -->
-                    <span class="text-xs sm:text-sm font-normal text-slate-400">kWh</span>
+                    {{ "%.2f" % totals['total_balance']}}
+                    <span class="text-xs sm:text-sm font-normal text-slate-400"> kWh
+kWh</span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-emerald-500/80 mt-1">Net surplus to grid</div>
@@ -55,7 +61,8 @@
                 <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Solar Generated</div>
                 <div class="text-xl sm:text-2xl font-bold text-amber-400 mt-1">
                     <!-- %# printf "%.2f" .Overview.TotalSolarGen  -->
-                    <span class="text-xs sm:text-sm font-normal text-slate-400">kWh</span>
+                    {{ "%.2f" % totals['total_solar']}} 
+                    <span class="text-xs sm:text-sm font-normal text-slate-400"> kWh</span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-amber-500/80 mt-1">Cumulative inverter yield</div>
@@ -66,8 +73,8 @@
             <div>
                 <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Consumed</div>
                 <div class="text-xl sm:text-2xl font-bold text-cyan-400 mt-1">
-                    %# printf "%.2f" .Overview.TotalHomeConsumption 
-                    <span class="text-xs sm:text-sm font-normal text-slate-400">kWh</span>
+                    {{ "%.2f" % totals['total_consumption']}} 
+                    <span class="text-xs sm:text-sm font-normal text-slate-400"> kWh</span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-cyan-500/80 mt-1">Cumulative Home Consumed</div>
