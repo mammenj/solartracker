@@ -111,6 +111,13 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
 
     return True, ""
 
+def get_chart_data():
+    raw_periods = get_periods()
+    dates = [p.start.date for p in raw_periods] 
+    import_units = [p.import_diff for p in raw_periods]
+    json_dates = json.dumps(dates)
+    json_import = json.dumps(import_units)
+    return json_dates, json_import
 
 @app.get("/old")
 def index():
@@ -142,6 +149,7 @@ def index():
         readings=readings,
         # periods_with_weekly=periods_with_weekly,
         totals=totals,
+        chartdata=get_chart_data,
     )
 
 @app.get("/app/dashboard")
@@ -158,6 +166,8 @@ def dashboard():
         readings=readings,
         # periods_with_weekly=periods_with_weekly,
         totals=totals,
+        chartdata=get_chart_data,
+
     )
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 

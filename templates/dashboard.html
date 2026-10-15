@@ -1,15 +1,15 @@
 <div class="min-h-0 flex-1 flex flex-col gap-4">
     <!-- Top Metric Cards Grid -->
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 shrink-0">
-        
+
         <!-- Total Readings Count -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
                 <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Days</div>
                 <div class="text-xl sm:text-2xl font-bold text-slate-100 mt-1">
                     <!-- %# len .Overview.Records  -->
-                {{ "%2d" % totals['total_days']}} 
-                  <span class="text-xs sm:text-sm font-normal text-slate-400"> days</span>  
+                    {{ "%2d" % totals['total_days']}}
+                    <span class="text-xs sm:text-sm font-normal text-slate-400"> days</span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-slate-500 mt-1">Logged in DB</div>
@@ -18,12 +18,13 @@
         <!-- Total Export Generated -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
-                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Export</div>
+                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Export
+                </div>
                 <div class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
                     <!-- %# printf "%.2f" .Overview.TotalExport  -->
-                    {{ "%.2f" % totals['total_export']}} 
+                    {{ "%.2f" % totals['total_export']}}
                     <span class="text-xs sm:text-sm font-normal text-slate-400">kWh
-</span>
+                    </span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-emerald-500/80 mt-1">Cumulative grid export</div>
@@ -32,7 +33,8 @@
         <!-- Total Import Consumed -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
-                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Import</div>
+                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Import
+                </div>
                 <div class="text-xl sm:text-2xl font-bold text-red-400 mt-1">
                     <!-- %# printf "%.2f" .Overview.TotalImport  -->
                     {{ "%.2f" % totals['total_import']}}
@@ -45,11 +47,12 @@
         <!-- Total Net Balance -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
-                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Net Balance</div>
+                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Net
+                    Balance</div>
                 <div class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
                     {{ "%.2f" % totals['total_balance']}}
                     <span class="text-xs sm:text-sm font-normal text-slate-400"> kWh
-kWh</span>
+                        kWh</span>
                 </div>
             </div>
             <div class="text-[10px] sm:text-xs text-emerald-500/80 mt-1">Net surplus to grid</div>
@@ -58,10 +61,11 @@ kWh</span>
         <!-- Total Solar Generated -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
-                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Solar Generated</div>
+                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Solar
+                    Generated</div>
                 <div class="text-xl sm:text-2xl font-bold text-amber-400 mt-1">
                     <!-- %# printf "%.2f" .Overview.TotalSolarGen  -->
-                    {{ "%.2f" % totals['total_solar']}} 
+                    {{ "%.2f" % totals['total_solar']}}
                     <span class="text-xs sm:text-sm font-normal text-slate-400"> kWh</span>
                 </div>
             </div>
@@ -71,9 +75,10 @@ kWh</span>
         <!-- Total Home Consumed -->
         <div class="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col justify-between">
             <div>
-                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Consumed</div>
+                <div class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total Consumed
+                </div>
                 <div class="text-xl sm:text-2xl font-bold text-cyan-400 mt-1">
-                    {{ "%.2f" % totals['total_consumption']}} 
+                    {{ "%.2f" % totals['total_consumption']}}
                     <span class="text-xs sm:text-sm font-normal text-slate-400"> kWh</span>
                 </div>
             </div>
@@ -82,7 +87,7 @@ kWh</span>
 
     </div>
 
-    
+
     <!-- Main Historical Period Summaries Container -->
     <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
         <h2 class="text-xs sm:text-sm font-semibold text-slate-200 mb-3 shrink-0">Period Summaries</h2>
@@ -91,31 +96,34 @@ kWh</span>
         <div class="block md:hidden overflow-y-auto space-y-2.5 flex-1 pr-1">
             <!-- %# range .Overview.Summaries  -->
             <div class="bg-slate-950 border border-slate-800 rounded-md p-3 text-xs space-y-2">
-                <div class="font-medium text-slate-200 border-b border-slate-800 pb-1.5 flex justify-between items-center">
+                <div
+                    class="font-medium text-slate-200 border-b border-slate-800 pb-1.5 flex justify-between items-center">
                     <!-- <span>%# .PeriodName </span> -->
-                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">%# printf "%.0f" .Days  days</span>
+                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">%# printf
+                        "%.0f" .Days days</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-0.5 font-mono text-[11px]">
                     <div>
                         <span class="text-slate-500 block text-[9px] font-sans">Import Added</span>
-                        <span class="text-red-400">%# printf "%+.2f" .Import  kWh</span>
+                        <span class="text-red-400">%# printf "%+.2f" .Import kWh</span>
                     </div>
                     <div>
                         <span class="text-slate-500 block text-[9px] font-sans">Export Added</span>
-                        <span class="text-emerald-400">%# printf "%+.2f" .Export  kWh</span>
+                        <span class="text-emerald-400">%# printf "%+.2f" .Export kWh</span>
                     </div>
                     <div>
                         <span class="text-slate-500 block text-[9px] font-sans">Net Difference</span>
-                        <span class="text-emerald-400 font-bold">%# printf "%+.2f" .NetEnergy  kWh</span>
+                        <span class="text-emerald-400 font-bold">%# printf "%+.2f" .NetEnergy kWh</span>
                     </div>
                     <div>
                         <span class="text-slate-500 block text-[9px] font-sans">Home Consumed</span>
-                        <span class="text-cyan-400 font-bold">%# printf "%+.2f" .Consumption  kWh</span>
+                        <span class="text-cyan-400 font-bold">%# printf "%+.2f" .Consumption kWh</span>
                     </div>
                 </div>
-                <div class="text-[10px] text-slate-400 bg-slate-900/60 p-1.5 rounded border border-slate-800/80 flex justify-between font-mono">
+                <div
+                    class="text-[10px] text-slate-400 bg-slate-900/60 p-1.5 rounded border border-slate-800/80 flex justify-between font-mono">
                     <span class="font-sans text-slate-500">Daily Average:</span>
-                    <span class="text-cyan-300">%# printf "%+.2f" .DailyAvgConsom  kWh/day</span>
+                    <span class="text-cyan-300">%# printf "%+.2f" .DailyAvgConsom kWh/day</span>
                 </div>
             </div>
             <!-- %# else  -->
@@ -125,193 +133,198 @@ kWh</span>
             <!-- %# end  -->
         </div>
     </div>
-  </div>
-        <!-- Desktop Table View (Medium & Large Screens) -->
-        <div class="hidden md:block overflow-y-auto flex-1">
-            <table class="w-full text-left text-xs text-slate-300">
-                <thead class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10">
-                    <tr>
-                        <th class="p-2.5">Period Range</th>
-                        <th class="p-2.5">Days</th>
-                        <th class="p-2.5">Import Added</th>
-                        <th class="p-2.5">Export Added</th>
-                        <th class="p-2.5">Net Difference</th>
-                        <th class="p-2.5">Home Consumption</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                    <!-- %# range .Overview.Summaries  -->
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <!-- <td class="p-2.5 text-slate-200 font-medium">%# .PeriodName </td> -->
-                        <!-- <td class="p-2.5 font-mono text-slate-400">%# printf "%.0f" .Days </td> -->
-                    <!--     <td class="p-2.5 text-red-400 font-mono">%# printf "%+.2f" .Import  kWh</td> -->
-                    <!--     <td class="p-2.5 text-emerald-400 font-mono">%# printf "%+.2f" .Export  kWh</td> -->
-                    <!--     <td class="p-2.5 font-bold font-mono text-emerald-400">%# printf "%+.2f" .NetEnergy  kWh</td> -->
-                    <!--     <td class="p-2.5 font-bold font-mono text-cyan-400"> -->
-                    <!--         %# printf "%+.2f" .Consumption  kWh  -->
-                    <!--         <span class="text-slate-500 font-normal text-[10px] font-sans">(%# printf "%+.2f" .DailyAvgConsom  kWh/day)</span> -->
-                    <!--     </td> -->
-                    <!-- </tr> -->
-                    <!-- %# else  -->
-                    <tr>
-                        <td colspan="6" class="p-6 text-center text-slate-500">
-                            No records found. Switch to Data Entry tab to log readings.
-                        </td>
-                    </tr>
-                    <!-- %# end  -->
-                </tbody>
-            </table>
-        </div>
-
-    </div>
-    <div x-data="energyChartComponent(%# marshalJSON .Overview.ChartData )"
-         class="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-lg shrink-0">
-        
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-xs sm:text-sm font-semibold text-slate-200">Energy Flow & Grid Balance</h2>
-            
-            <!-- Range Filter / Control inside Alpine -->
-            <div class="flex items-center gap-2">
-                <span class="text-[10px] text-slate-400 font-mono">View Recent:</span>
-                <select x-model="limit" @change="updateChart()" class="bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-none">
-                    <option value="6">6 Periods</option>
-                    <option value="12" selected>12 Periods</option>
-                    <option value="24">24 Periods</option>
-                    <option value="0">All Data</option>
-                </select>
-            </div>
-          </div>
-
-        <!-- Canvas Target for Chart.js -->
-          <div class="w-full h-56 sm:h-64 relative">
-            <canvas x-ref="chartCanvas"></canvas>
-          </div>
-    </div>
-
-
 </div>
+<!-- Desktop Table View (Medium & Large Screens) -->
+<div class="hidden md:block overflow-y-auto flex-1">
+    <table class="w-full text-left text-xs text-slate-300">
+        <thead class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10">
+            <tr>
+                <th class="p-2.5">Period Range</th>
+                <th class="p-2.5">Days</th>
+                <th class="p-2.5">Import Added</th>
+                <th class="p-2.5">Export Added</th>
+                <th class="p-2.5">Net Difference</th>
+                <th class="p-2.5">Home Consumption</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+            <!-- %# range .Overview.Summaries  -->
+            % for p in periods:
+
+            <tr class="hover:bg-slate-800/30 transition-colors">
+                <td class="p-2.5 text-slate-200 font-medium">{{p.start.date.strftime('%d/%m/%Y')}} -
+                    {{p.end.date.strftime('%d/%m/%Y')}}</td>
+                <td class="p-2.5 font-mono text-slate-400">{{p.days}}d</td>
+                <td class="p-2.5 text-red-400 font-mono">{{f"{p.import_diff:.2f}"}} kWh</td>
+                <td class="p-2.5 text-emerald-400 font-mono">{{f"{p.export_diff:.2f}"}} kWh</td>
+                <td class="p-2.5 font-bold font-mono text-emerald-400">{{f"{p.net_balance:.2f}"}} kWh</td>
+                <td class="p-2.5 font-bold font-mono text-cyan-400">{{f"{p.consumption:.2f}"}}
+                    <span class="text-slate-500 font-normal text-[10px] font-sans">kWh/day</span>
+                </td>
+            </tr>
+            % end
+            <!-- %# else  -->
+            % if not periods:
+            <tr>
+                <td colspan="6" class="p-6 text-center text-slate-500">
+                    No records found. Switch to Data Entry tab to log readings.
+                </td>
+            </tr>
+            % end
+            <!-- %# end  -->
+        </tbody>
+    </table>
+</div>
+
+<div x-data="energyChartComponent({{chartdata}})">
+    class="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-lg shrink-0">
+
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs sm:text-sm font-semibold text-slate-200">Energy Flow - Grid Balance</h2>
+
+        <!-- Range Filter / Control inside Alpine -->
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] text-slate-400 font-mono">View Recent:</span>
+            <select x-model="limit" @change="updateChart()"
+                class="bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-none">
+                <option value="6">6 Periods</option>
+                <option value="12" selected>12 Periods</option>
+                <option value="24">24 Periods</option>
+                <option value="0">All Data</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Canvas Target for Chart.js -->
+    <div class="w-full h-56 sm:h-64 relative">
+        <canvas x-ref="chartCanvas"></canvas>
+    </div>
+</div>
+
+
+
 <!-- Alpine Component Definition -->
 <script>
-function energyChartComponent(rawChartData) {
-    return {
-        rawPoints: rawChartData || [],
-        limit: 12,
-        chartInstance: null,
+    function energyChartComponent(rawChartData) {
+        return {
+            rawPoints: rawChartData || [],
+            limit: 12,
+            chartInstance: null,
 
-        init() {
-            this.renderChart();
-        },
+            init() {
+                this.renderChart();
+            },
 
-        getFilteredData() {
-            if (!this.rawPoints.length) return [];
-            const lim = parseInt(this.limit, 10);
-            if (lim === 0 || this.rawPoints.length <= lim) {
-                return this.rawPoints;
-            }
-            return this.rawPoints.slice(-lim);
-        },
+            getFilteredData() {
+                if (!this.rawPoints.length) return [];
+                const lim = parseInt(this.limit, 10);
+                if (lim === 0 || this.rawPoints.length <= lim) {
+                    return this.rawPoints;
+                }
+                return this.rawPoints.slice(-lim);
+            },
 
-        renderChart() {
-            const dataPoints = this.getFilteredData();
-            const ctx = this.$refs.chartCanvas.getContext('2d');
+            renderChart() {
+                const dataPoints = this.getFilteredData();
+                const ctx = this.$refs.chartCanvas.getContext('2d');
 
-            if (this.chartInstance) {
-                this.chartInstance.destroy();
-            }
+                if (this.chartInstance) {
+                    this.chartInstance.destroy();
+                }
 
-            this.chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: dataPoints.map(p => p.label),
-                    datasets: [
-                        {
-                            label: 'Solar Gen (kWh)',
-                            data: dataPoints.map(p => p.solar_gen),
-                            backgroundColor: '#f59e0b',
-                            borderRadius: 4,
-                            barPercentage: 0.7,
-                            categoryPercentage: 0.6
-                        },
-                        {
-                            label: 'Export (kWh)',
-                            data: dataPoints.map(p => p.export),
-                            backgroundColor: '#10b981',
-                            borderRadius: 4,
-                            barPercentage: 0.7,
-                            categoryPercentage: 0.6
-                        },
-                        {
-                            label: 'Import (kWh)',
-                            data: dataPoints.map(p => p.import),
-                            backgroundColor: '#ef4444',
-                            borderRadius: 4,
-                            barPercentage: 0.7,
-                            categoryPercentage: 0.6
-                        },
-                        {
-                            type: 'line',
-                            label: 'Self-Sufficiency (%)',
-                            data: dataPoints.map(p => p.self_sufficiency_pct),
-                            borderColor: '#10b981',
-                            backgroundColor: '#10b981',
-                            borderWidth: 2.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: '#0f172a',
-                            pointBorderColor: '#10b981',
-                            pointBorderWidth: 2,
-                            tension: 0.35,
-                            yAxisID: 'y1'
-                        },
-                        {
-                            type: 'line',
-                            label: 'Self-Consumption (%)',
-                            data: dataPoints.map(p => p.self_consumption_pct),
-                            borderColor: '#F5E027',
-                            backgroundColor: '#10b000',
-                            borderWidth: 2.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: '#F5E027',
-                            pointBorderColor: '#10b000',
-                            pointBorderWidth: 2,
-                            tension: 0.35,
-                            yAxisID: 'y1'
-                        }
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: dataPoints.map(p => p.label),
+                        datasets: [
+                            {
+                                label: 'Solar Gen (kWh)',
+                                data: dataPoints.map(p => p.solar_gen),
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 4,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.6
+                            },
+                            {
+                                label: 'Export (kWh)',
+                                data: dataPoints.map(p => p.export),
+                                backgroundColor: '#10b981',
+                                borderRadius: 4,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.6
+                            },
+                            {
+                                label: 'Import (kWh)',
+                                data: dataPoints.map(p => p.import),
+                                backgroundColor: '#ef4444',
+                                borderRadius: 4,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.6
+                            },
+                            {
+                                type: 'line',
+                                label: 'Self-Sufficiency (%)',
+                                data: dataPoints.map(p => p.self_sufficiency_pct),
+                                borderColor: '#10b981',
+                                backgroundColor: '#10b981',
+                                borderWidth: 2.5,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#0f172a',
+                                pointBorderColor: '#10b981',
+                                pointBorderWidth: 2,
+                                tension: 0.35,
+                                yAxisID: 'y1'
+                            },
+                            {
+                                type: 'line',
+                                label: 'Self-Consumption (%)',
+                                data: dataPoints.map(p => p.self_consumption_pct),
+                                borderColor: '#F5E027',
+                                backgroundColor: '#10b000',
+                                borderWidth: 2.5,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#F5E027',
+                                pointBorderColor: '#10b000',
+                                pointBorderWidth: 2,
+                                tension: 0.35,
+                                yAxisID: 'y1'
+                            }
 
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#94a3b8',
-                                font: { size: 11, family: 'sans-serif' },
-                                boxWidth: 12
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#94a3b8',
+                                    font: { size: 11, family: 'sans-serif' },
+                                    boxWidth: 12
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: '#0f172a',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#cbd5e1',
+                                borderColor: '#334155',
+                                borderWidth: 1
                             }
                         },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: '#0f172a',
-                            titleColor: '#f8fafc',
-                            bodyColor: '#cbd5e1',
-                            borderColor: '#334155',
-                            borderWidth: 1
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: '#64748b', font: { size: 10 } },
-                            grid: { color: '#1e293b' }
-                        },
-                        y: {
-                            ticks: { color: '#64748b', font: { size: 10 } },
-                            grid: { color: '#1e293b' }
-                        },
-                        y1: {
+                        scales: {
+                            x: {
+                                ticks: { color: '#64748b', font: { size: 10 } },
+                                grid: { color: '#1e293b' }
+                            },
+                            y: {
+                                ticks: { color: '#64748b', font: { size: 10 } },
+                                grid: { color: '#1e293b' }
+                            },
+                            y1: {
                                 type: 'linear',
                                 position: 'right',
                                 min: 0,
@@ -328,17 +341,17 @@ function energyChartComponent(rawChartData) {
                                 },
                                 grid: { drawOnChartArea: false },
                                 border: { dash: [4, 4] }
+                            }
                         }
                     }
-                }
-            });
-        },
+                });
+            },
 
-        updateChart() {
-            this.renderChart();
-        }
-    };
-}
+            updateChart() {
+                this.renderChart();
+            }
+        };
+    }
 </script>
 
-%# end 
+%# end
