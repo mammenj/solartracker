@@ -111,16 +111,18 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
 
     return True, ""
 
+
 def get_chart_data():
     raw_periods = get_periods()
-    dates = [p.start.date for p in raw_periods] 
+    dates = [p.start.date for p in raw_periods]
     import_units = [p.import_diff for p in raw_periods]
     json_dates = json.dumps(dates)
     json_import = json.dumps(import_units)
     return json_dates, json_import
 
+
 @app.get("/old")
-def index():
+def indexold():
     today = datetime.now().strftime("%Y-%m-%d")
     periods = get_periods()
     periods_with_weekly = get_periods_with_weekly()
@@ -134,6 +136,7 @@ def index():
         periods_with_weekly=periods_with_weekly,
         totals=totals,
     )
+
 
 @app.get("/")
 def index():
@@ -152,6 +155,7 @@ def index():
         chartdata=get_chart_data,
     )
 
+
 @app.get("/app/dashboard")
 def dashboard():
     # today = datetime.now().strftime("%Y-%m-%d")
@@ -167,15 +171,18 @@ def dashboard():
         # periods_with_weekly=periods_with_weekly,
         totals=totals,
         chartdata=get_chart_data,
-
     )
+
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-@app.get('/static/<filename:path>')
+
+@app.get("/static/<filename:path>")
 def send_static(filename):
     # Join the directory path cleanly with your static folder
-    static_path = os.path.join(BASE_DIR, 'static')
+    static_path = os.path.join(BASE_DIR, "static")
     return static_file(filename, root=static_path)
+
 
 @app.get("/app/entry")
 def entry():
@@ -183,16 +190,15 @@ def entry():
     # periods = get_periods()
     # periods_with_weekly = get_periods_with_weekly()
     # totals: TotalsDict = get_totals()
-    # readings = get_readings()
+    readings = get_readings()
     return template(
         "templates/entry.html",
         # today=today,
         # periods=periods,
-        # readings=readings,
+        readings=readings,
         # periods_with_weekly=periods_with_weekly,
         # totals=totals,
     )
-
 
 
 @app.post("/readings")
@@ -239,7 +245,7 @@ def add_reading():
 
 
 def main():
-    run(app, host=config.host, port=config.port, server=config.server,debug= True)
+    run(app, host=config.host, port=config.port, server=config.server, debug=True)
 
 
 if __name__ == "__main__":
