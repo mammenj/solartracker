@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "solar_tracker"
+version = "1.0.0"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "bottle>=0.12.25",
+    "gunicorn>=26.2.0",
+    "waitress>=3.0.2",
+]
+
+[project.scripts]
+st = "main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+
