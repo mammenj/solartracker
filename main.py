@@ -117,7 +117,11 @@ def get_chart_data():
         consumption = p.consumption
         export = p.export_diff
         import_diff = p.import_diff
-        self_sufficiency = (solar / consumption * 100) if consumption > 0 else 0.0
+        self_sufficiency = (
+            ((consumption - import_diff) / consumption * 100)
+            if consumption > 0
+            else 0.0
+        )
         self_consumption = ((solar - export) / solar * 100) if solar > 0 else 0.0
         points.append(
             {
