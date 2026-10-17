@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -12,11 +13,6 @@ import os
 # Web App Setup
 app = Bottle()
 BASE_DIR = Path(__file__).resolve().parent
-VIEWS_DIR = BASE_DIR / "views"
-
-# Force Bottle to look inside your project's views directory
-if str(VIEWS_DIR) not in bottle.TEMPLATE_PATH:
-    bottle.TEMPLATE_PATH.insert(0, str(VIEWS_DIR))
 
 # Load configuration
 config = load_config()
@@ -26,17 +22,17 @@ store = MeterReadingStore(config.db_file)
 def get_periods() -> list[ReadingPeriod]:
     """Get all reading periods from the database."""
     readings = store.load_all()
-    # return [
-    #    ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
-    # ]
-    return list(
-        reversed(
-            [
-                ReadingPeriod(readings[i - 1], readings[i])
-                for i in range(1, len(readings))
-            ]
-        )
-    )
+    return [
+        ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
+    ]
+    # return list(
+        # reversed(
+            # [
+                # ReadingPeriod(readings[i - 1], readings[i])
+                # for i in range(1, len(readings))
+            # ]
+        # )
+    # )
 
 
 def get_readings() -> list[MeterReading]:
@@ -113,29 +109,25 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
 
 
 def get_chart_data():
+    """Return chart-ready data for the dashboard energy chart."""
     raw_periods = get_periods()
-    dates = [p.start.date for p in raw_periods]
-    import_units = [p.import_diff for p in raw_periods]
-    json_dates = json.dumps(dates)
-    json_import = json.dumps(import_units)
-    return json_dates, json_import
-
-
-@app.get("/old")
-def indexold():
-    today = datetime.now().strftime("%Y-%m-%d")
-    periods = get_periods()
-    periods_with_weekly = get_periods_with_weekly()
-    totals: TotalsDict = get_totals()
-    readings = get_readings()
-    return template(
-        "views/index.html",
-        today=today,
-        periods=periods,
-        readings=readings,
-        periods_with_weekly=periods_with_weekly,
-        totals=totals,
-    )
+    points = []
+    for p in raw_periods:
+        solar = p.solar_yield
+        consumption = p.consumption
+        export = p.export_diff
+        import_diff = p.import_diff
+        self_sufficiency = (solar / consumption * 100) if consumption > 0 else 0.0
+        self_consumption = ((solar - export) / solar * 100) if solar > 0 else 0.0
+        points.append({
+            "label": p.start.date.strftime("%d/%m/%Y"),
+            "solar_gen": round(solar, 2),
+            "export": round(export, 2),
+            "import": round(import_diff, 2),
+            "self_sufficiency_pct": round(self_sufficiency, 1),
+            "self_consumption_pct": round(self_consumption, 1),
+        })
+    return points
 
 
 @app.get("/")
@@ -152,7 +144,9 @@ def index():
         readings=readings,
         # periods_with_weekly=periods_with_weekly,
         totals=totals,
-        chartdata=get_chart_data,
+        chartdata=json.dumps(get_chart_data()),
+        version=config.app_version,
+        db_name=config.db_name,
     )
 
 
@@ -170,7 +164,9 @@ def dashboard():
         readings=readings,
         # periods_with_weekly=periods_with_weekly,
         totals=totals,
-        chartdata=get_chart_data,
+        chartdata=json.dumps(get_chart_data()),
+        version=config.app_version,
+        db_name=config.db_name,
     )
 
 
@@ -198,7 +194,16 @@ def entry():
         readings=readings,
         # periods_with_weekly=periods_with_weekly,
         # totals=totals,
+        version=config.app_version,
+        db_name=config.db_name,
     )
+
+
+@app.get("/app/entry/readings-table")
+def entry_readings_table():
+    """Return the readings table partial for HTMX refresh."""
+    readings = get_readings()
+    return template("templates/table_readings.html", readings=readings)
 
 
 @app.post("/readings")
@@ -226,22 +231,8 @@ def add_reading():
         if is_update
         else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}"
     )
-    periods_with_weekly = get_periods_with_weekly()
 
-    rendered_table = template(
-        "views/table_partial.html",
-        periods_with_weekly=periods_with_weekly,
-        periods=get_periods(),
-        readings=get_readings(),
-        totals=get_totals(),
-    )
-
-    return f"""
-    <div class='alert-success'>{msg}</div>
-    <script>
-        document.getElementById('history-table').innerHTML = `{rendered_table}`;
-    </script>
-    """
+    return f"<div class='alert-success'>{msg}</div>"
 
 
 def main():

@@ -10,18 +10,13 @@
         Log New Reading
       </h2>
 
-      <!-- %# if .Error  -->
-      <div
-        class="mb-4 p-3 bg-red-950/80 border border-red-800/80 rounded text-xs text-red-200"
-      >
-        <!-- <span class="font-bold">Error:</span> %# .Error  -->
-      </div>
-      <!-- %# end  -->
+      <div id="feedback" class="mb-4 min-h-[1rem]"></div>
 
       <form
-        hx-post="/api/readings"
-        hx-target="#tab-content"
+        hx-post="/readings"
+        hx-target="#feedback"
         hx-swap="innerHTML"
+        hx-on::after-request="if(event.detail.successful) { htmx.trigger('#readings-table-content', 'readingAdded') }"
         class="space-y-4"
       >
         <div>
@@ -46,7 +41,7 @@
             type="number"
             step="0.01"
             inputmode="decimal"
-            name="solar_gen"
+            name="solar_units"
             placeholder="e.g. 14.50"
             required
             class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
@@ -61,7 +56,7 @@
             type="number"
             step="0.01"
             inputmode="decimal"
-            name="export"
+            name="export_units"
             placeholder="e.g. 1420.50"
             required
             class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
@@ -76,7 +71,7 @@
             type="number"
             step="0.01"
             inputmode="decimal"
-            name="import"
+            name="import_units"
             placeholder="e.g. 850.25"
             required
             class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
@@ -112,10 +107,12 @@
       >
     </div>
 
-    <!-- Mobile View (Stacked Cards) -->
-    
     <!-- Desktop View (Stretches to bottom of viewport) -->
     <div
+      id="readings-table-content"
+      hx-trigger="readingAdded"
+      hx-get="/app/entry/readings-table"
+      hx-swap="innerHTML"
       class="w-full md:block overflow-y-auto flex-1 border border-slate-800/60 rounded"
     >
       <table class="w-full text-left text-xs text-slate-300">
@@ -123,48 +120,36 @@
           class="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 z-10"
         >
           <tr>
-            <th class="p-3">Date(Added On)</th>
+            <th class="p-3">Date</th>
             <th class="p-3">Solar Gen</th>
             <th class="p-3">Export</th>
             <th class="p-3">Import</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800/50">
-          <!-- %# range .Overview.Records  -->
           % for r in readings:
           <tr class="hover:bg-slate-800/30 transition-colors">
             <td class="p-3 font-medium text-slate-200">
-              <!-- %#.Id. %# formatDate .Date  (%#formatDateTime .AddedOn) -->
               {{r.date.strftime('%d/%m/%Y')}}
-          </div>
-
             </td>
             <td class="p-3 text-amber-400 font-mono">
-              <!-- %# printf "%.2f" .SolarGen  kWh -->
-              {{f"{r.import_units:.2f}"}} kWh
-
+              {{f"{r.solar_units:.2f}"}} kWh
             </td>
             <td class="p-3 text-emerald-400 font-mono">
-              <!-- %# printf "%.2f" .Export  kWh -->
-          {{f"{r.export_units:.2f}"}} kWh
-
+              {{f"{r.export_units:.2f}"}} kWh
             </td>
             <td class="p-3 text-red-400 font-mono">
-              <!-- %# printf "%.2f" .Import  kWh -->
-          {{f"{r.solar_units:.2f}"}} kWh
-
+              {{f"{r.import_units:.2f}"}} kWh
             </td>
           </tr>
-    % end
-          <!-- %# else  -->
-    %if not readings:
+          % end
+          % if not readings:
           <tr>
             <td colspan="4" class="p-6 text-center text-slate-500">
               No readings logged yet.
             </td>
           </tr>
-    % end
-          <!-- %# end  -->
+          % end
         </tbody>
       </table>
     </div>
