@@ -26,12 +26,12 @@ def get_periods() -> list[ReadingPeriod]:
         ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
     ]
     # return list(
-        # reversed(
-            # [
-                # ReadingPeriod(readings[i - 1], readings[i])
-                # for i in range(1, len(readings))
-            # ]
-        # )
+    # reversed(
+    # [
+    # ReadingPeriod(readings[i - 1], readings[i])
+    # for i in range(1, len(readings))
+    # ]
+    # )
     # )
 
 
@@ -119,14 +119,16 @@ def get_chart_data():
         import_diff = p.import_diff
         self_sufficiency = (solar / consumption * 100) if consumption > 0 else 0.0
         self_consumption = ((solar - export) / solar * 100) if solar > 0 else 0.0
-        points.append({
-            "label": p.start.date.strftime("%d/%m/%Y"),
-            "solar_gen": round(solar, 2),
-            "export": round(export, 2),
-            "import": round(import_diff, 2),
-            "self_sufficiency_pct": round(self_sufficiency, 1),
-            "self_consumption_pct": round(self_consumption, 1),
-        })
+        points.append(
+            {
+                "label": p.start.date.strftime("%d/%m/%Y"),
+                "solar_gen": round(solar, 2),
+                "export": round(export, 2),
+                "import": round(import_diff, 2),
+                "self_sufficiency_pct": round(self_sufficiency, 1),
+                "self_consumption_pct": round(self_consumption, 1),
+            }
+        )
     return points
 
 
@@ -146,7 +148,7 @@ def index():
         totals=totals,
         chartdata=json.dumps(get_chart_data()),
         version=config.app_version,
-        db_name=config.db_name,
+        db_name=config.db_file,
     )
 
 
@@ -166,7 +168,7 @@ def dashboard():
         totals=totals,
         chartdata=json.dumps(get_chart_data()),
         version=config.app_version,
-        db_name=config.db_name,
+        db_name=config.db_file,
     )
 
 
@@ -189,13 +191,9 @@ def entry():
     readings = get_readings()
     return template(
         "templates/entry.html",
-        # today=today,
-        # periods=periods,
         readings=readings,
-        # periods_with_weekly=periods_with_weekly,
-        # totals=totals,
         version=config.app_version,
-        db_name=config.db_name,
+        db_name=config.db_file,
     )
 
 

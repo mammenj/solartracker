@@ -82,7 +82,7 @@
         <div class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
           {{ "%.2f" % totals['total_balance']}}
           <span class="text-xs sm:text-sm font-normal text-slate-400">
-            kWh kWh</span
+            kWh</span
           >
         </div>
       </div>
@@ -166,8 +166,8 @@
 
         <tr class="hover:bg-slate-800/30 transition-colors">
           <td class="p-3 text-slate-200 font-normal">
-            {{p.start.date.strftime('%d/%m/%Y')}} -
-            {{p.end.date.strftime('%d/%m/%Y')}}
+            {{p.start.date.strftime('%d.%b')}} -
+            {{p.end.date.strftime('%d.%b.%y')}}
           </td>
           <td class="p-2 font-mono text-slate-400">{{p.days}}d</td>
           <td class="p-2 text-red-400 font-mono">
@@ -383,4 +383,3 @@
 
   %# end
 </div>
-

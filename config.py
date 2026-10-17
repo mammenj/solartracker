@@ -15,7 +15,6 @@ class AppConfig(NamedTuple):
     port: int
     server: str
     app_version: str
-    db_name: str
 
 
 def _load_env(env_file: Path) -> dict:
@@ -41,17 +40,16 @@ def load_config() -> AppConfig:
     """Load host/port/server from config.json, version/db from .env and CLI."""
     project_root = Path(__file__).resolve().parent
     config_file = project_root / "config.json"
-    env_file = project_root / ".env"
+    #    env_file = project_root / ".env"
 
-    env_vars = _load_env(env_file)
+    #    env_vars = _load_env(env_file)
 
     defaults = {
         "host": "localhost",
         "port": 8080,
         "server": "gunicorn",
         "db": "meter_logs.db",
-        "app_version": env_vars.get("APP_VERSION", "1.0.0"),
-        "db_name": env_vars.get("DB_NAME", "meter_logs.db"),
+        "version": "1.0.0",
     }
 
     if config_file.exists():
@@ -83,6 +81,5 @@ def load_config() -> AppConfig:
         host=defaults.get("host", "localhost"),
         port=defaults.get("port", 8080),
         server=defaults.get("server", "gunicorn"),
-        app_version=defaults.get("app_version", "1.0.0"),
-        db_name=defaults.get("db_name", "meter_logs.db"),
+        app_version=defaults.get("version", "1.0.0"),
     )

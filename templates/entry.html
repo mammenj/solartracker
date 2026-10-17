@@ -102,8 +102,8 @@
       <h2 class="text-sm sm:text-base font-semibold text-slate-100">
         Logged Data Records
       </h2>
-      <span class="text-xs text-slate-400 font-mono"
-        <!-- >%# len .Overview.Records  total entries</span -->
+      <span class="text-xs text-slate-400 font-mono">
+        {{len(readings)}} total entries</span
       >
     </div>
 
@@ -127,6 +127,14 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800/50">
+          %if not readings:
+          <tr>
+            <td colspan="4" class="p-6 text-center text-slate-500">
+              No readings logged yet.
+            </td>
+          </tr>
+          % else:
+          <span></span>
           % for r in readings:
           <tr class="hover:bg-slate-800/30 transition-colors">
             <td class="p-3 font-medium text-slate-200">
@@ -143,12 +151,7 @@
             </td>
           </tr>
           % end
-          % if not readings:
-          <tr>
-            <td colspan="4" class="p-6 text-center text-slate-500">
-              No readings logged yet.
-            </td>
-          </tr>
+          <span></span>
           % end
         </tbody>
       </table>
