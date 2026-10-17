@@ -11,6 +11,13 @@
     <script src="/static/htmx.min.js" defer></script>
     <script src="/static/alpine.min.js" defer></script>
     <script src="/static/chart.js"></script>
+    <script>
+      document.body.addEventListener("htmx:afterSwap", function (evt) {
+        if (Alpine) {
+          Alpine.initTree(evt.detail.elt);
+        }
+      });
+    </script>
   </head>
   <body
     x-data="{ activeTab: 'dashboard' }"
