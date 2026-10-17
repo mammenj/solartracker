@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Solar Monitor Dashboard</title>
+    <script src="/static/tailwind.css"></script>
+    <script src="/static/htmx.min.js" defer></script>
+    <script src="/static/alpine.min.js" defer></script>
+    <script src="/static/chart.js"></script>
+    <script>
+      document.body.addEventListener("htmx:afterSwap", function (evt) {
+        if (Alpine) {
+          Alpine.initTree(evt.detail.elt);
+        }
+      });
+    </script>
+  </head>
+  <body
+    x-data="{ activeTab: 'dashboard' }"
+    class="h-full flex flex-col font-sans antialiased pb-16 md:pb-0"
+  >
+    <!-- Top Navigation / Header -->
+    <header
+      class="h-14 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center justify-between px-4 sm:px-6 shrink-0 sticky top-0 z-40"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-emerald-500 animate-pulse"
+        ></div>
+        <span
+          class="font-semibold text-slate-100 tracking-wide text-xs sm:text-sm"
+        >
+          SOLAR MONITOR
+          <span class="text-[10px] sm:text-xs text-slate-500 ml-1 font-mono"
+            >v{{version}}
+          </span>
+        </span>
+      </div>
+
+      <!-- Desktop Tab Navigation Bar -->
+      <nav class="hidden md:flex h-full gap-1">
+        <button
+          hx-get="/app/dashboard"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          @click="activeTab = 'dashboard'"
+          :class="activeTab === 'dashboard' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
+          class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
+        >
+          Dashboard Summary
+        </button>
+        <button
+          hx-get="/app/entry"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          @click="activeTab = 'entry'"
+          :class="activeTab === 'entry' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
+          class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
+        >
+          Data Entry
+        </button>
+      </nav>
+
+      <div
+        class="text-[11px] sm:text-xs text-slate-400 font-mono flex items-center gap-1.5"
+      >
+        <span
+          class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"
+        ></span>
+        <span class="hidden sm:inline">System</span>{{db_name}}
+      </div>
+    </header>
+
+    <!-- Main Dynamic Tab Container -->
+    <main
+      id="tab-content"
+      class="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-950"
+    >
+      <!-- Initial Load: Dashboard Tab Content -->
+      % include("templates/dashboard.html")
+    </main>
+
+    <!-- Fixed Bottom Navigation Bar (Mobile Only) -->
+    <nav
+      class="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 border-t border-slate-800 flex justify-around p-1.5 z-50 backdrop-blur"
+    >
+      <button
+        hx-get="/app/dashboard"
+        hx-target="#tab-content"
+        hx-swap="innerHTML"
+        @click="activeTab = 'dashboard'"
+        :class="activeTab === 'dashboard' ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+        class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
+      >
+        <span class="text-base mb-0.5">📊</span>
+        <span class="text-[10px] tracking-tight">Dashboard</span>
+      </button>
+
+      <button
+        hx-get="/app/entry"
+        hx-target="#tab-content"
+        hx-swap="innerHTML"
+        @click="activeTab = 'entry'"
+        :class="activeTab === 'entry' ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+        class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
+      >
+        <span class="text-base mb-0.5">📝</span>
+        <span class="text-[10px] tracking-tight">Data Entry</span>
+      </button>
+    </nav>
+    <footer>
+      <div
+        class="text-[12px] sm:text-xs text-slate-400 font-mono flex content-center gap-1.5"
+      >
+        <span
+          class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"
+        ></span>
+        <span class="hidden sm:inline">jsmammen@gmail.com</span
+        >jsmammen@gmail.com
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-400"></span>
+        Designed and built by J. S. Mammen
+      </div>
+    </footer>
+  </body>
+</html>

@@ -3,4 +3,5 @@
   "port": 3000,
   "server": "waitress",
   "db": "meter_logs.db"
+  "version": "2.0.0-nefix",
 }

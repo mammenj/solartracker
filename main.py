@@ -1,30 +1,50 @@
+<<<<<<< HEAD
+=======
+import json
+>>>>>>> nefix
 from datetime import datetime
 from pathlib import Path
 
 import bottle
+<<<<<<< HEAD
 from bottle import Bottle, request, run, template
+=======
+from bottle import Bottle, request, run, template, static_file
+>>>>>>> nefix
 
 from config import load_config
 from libsolar import EnergyExtrapolator, MeterReading, ReadingPeriod, TotalsDict
 from libsolar_sqlite import MeterReadingStore
+<<<<<<< HEAD
+=======
+import os
+>>>>>>> nefix
 
 # Web App Setup
 app = Bottle()
 BASE_DIR = Path(__file__).resolve().parent
+<<<<<<< HEAD
 VIEWS_DIR = BASE_DIR / "views"
 
 # Force Bottle to look inside your project's views directory
 if str(VIEWS_DIR) not in bottle.TEMPLATE_PATH:
     bottle.TEMPLATE_PATH.insert(0, str(VIEWS_DIR))
+=======
+>>>>>>> nefix
 
 # Load configuration
 config = load_config()
 store = MeterReadingStore(config.db_file)
+<<<<<<< HEAD
+=======
+db_name = Path(config.db_file).name
+>>>>>>> nefix
 
 
 def get_periods() -> list[ReadingPeriod]:
     """Get all reading periods from the database."""
     readings = store.load_all()
+<<<<<<< HEAD
     # return [
     #    ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
     # ]
@@ -36,6 +56,19 @@ def get_periods() -> list[ReadingPeriod]:
             ]
         )
     )
+=======
+    return [
+        ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
+    ]
+    # return list(
+    # reversed(
+    # [
+    # ReadingPeriod(readings[i - 1], readings[i])
+    # for i in range(1, len(readings))
+    # ]
+    # )
+    # )
+>>>>>>> nefix
 
 
 def get_readings() -> list[MeterReading]:
@@ -87,8 +120,14 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
         return True, ""
 
     last = readings[-1]
+<<<<<<< HEAD
     is_present = any(r.date == new_reading.date for r in readings)
     print("date is is_presenti >>>>>>>>", is_present)
+=======
+    print("last record", last.date)
+    is_present = any(r.date == new_reading.date for r in readings)
+    print("date is present >>>>>>>>", is_present)
+>>>>>>> nefix
     if is_present:
         return True, "Updating"
     if new_reading.import_units < last.import_units:
@@ -110,6 +149,7 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
     return True, ""
 
 
+<<<<<<< HEAD
 @app.get("/")
 def index():
     today = datetime.now().strftime("%Y-%m-%d")
@@ -127,6 +167,108 @@ def index():
     )
 
 
+=======
+def get_chart_data():
+    """Return chart-ready data for the dashboard energy chart."""
+    raw_periods = get_periods()
+    points = []
+    for p in raw_periods:
+        solar = p.solar_yield
+        consumption = p.consumption
+        export = p.export_diff
+        import_diff = p.import_diff
+        self_sufficiency = (
+            ((consumption - import_diff) / consumption * 100)
+            if consumption > 0
+            else 0.0
+        )
+        self_consumption = ((solar - export) / solar * 100) if solar > 0 else 0.0
+        points.append(
+            {
+                "label": p.start.date.strftime("%d/%m/%Y"),
+                "solar_gen": round(solar, 2),
+                "export": round(export, 2),
+                "import": round(import_diff, 2),
+                "self_sufficiency_pct": round(self_sufficiency, 1),
+                "self_consumption_pct": round(self_consumption, 1),
+            }
+        )
+    return points
+
+
+@app.get("/")
+def index():
+    # today = datetime.now().strftime("%Y-%m-%d")
+    periods = get_periods()
+    # periods_with_weekly = get_periods_with_weekly()
+    totals: TotalsDict = get_totals()
+    readings = get_readings()
+    return template(
+        "templates/base.html",
+        # today=today,
+        periods=periods,
+        readings=readings,
+        # periods_with_weekly=periods_with_weekly,
+        totals=totals,
+        chartdata=json.dumps(get_chart_data()),
+        version=config.app_version,
+        db_name=db_name,
+    )
+
+
+@app.get("/app/dashboard")
+def dashboard():
+    # today = datetime.now().strftime("%Y-%m-%d")
+    periods = get_periods()
+    # periods_with_weekly = get_periods_with_weekly()
+    totals: TotalsDict = get_totals()
+    readings = get_readings()
+    return template(
+        "templates/dashboard.html",
+        # today=today,
+        periods=periods,
+        readings=readings,
+        # periods_with_weekly=periods_with_weekly,
+        totals=totals,
+        chartdata=json.dumps(get_chart_data()),
+        version=config.app_version,
+        db_name=db_name,
+    )
+
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
+@app.get("/static/<filename:path>")
+def send_static(filename):
+    # Join the directory path cleanly with your static folder
+    static_path = os.path.join(BASE_DIR, "static")
+    return static_file(filename, root=static_path)
+
+
+@app.get("/app/entry")
+def entry():
+    # today = datetime.now().strftime("%Y-%m-%d")
+    # periods = get_periods()
+    # periods_with_weekly = get_periods_with_weekly()
+    # totals: TotalsDict = get_totals()
+    readings = get_readings()
+    return template(
+        "templates/entry.html",
+        readings=readings,
+        version=config.app_version,
+        db_name=db_name,
+    )
+
+
+@app.get("/app/entry/readings-table")
+def entry_readings_table():
+    """Return the readings table partial for HTMX refresh."""
+    readings = get_readings()
+    return template("templates/table_readings.html", readings=readings)
+
+
+>>>>>>> nefix
 @app.post("/readings")
 def add_reading():
     try:
@@ -152,6 +294,7 @@ def add_reading():
         if is_update
         else f"✓ Recorded reading for {curr_date.strftime('%d-%b-%Y')}"
     )
+<<<<<<< HEAD
     periods_with_weekly = get_periods_with_weekly()
 
     rendered_table = template(
@@ -172,6 +315,14 @@ def add_reading():
 
 def main():
     run(app, host=config.host, port=config.port, server=config.server)
+=======
+
+    return f"<div class='alert-success'>{msg}</div>"
+
+
+def main():
+    run(app, host=config.host, port=config.port, server=config.server, debug=True)
+>>>>>>> nefix
 
 
 if __name__ == "__main__":

@@ -1,0 +1,161 @@
+<div
+  class="w-full flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-h-0"
+>
+  <!-- Form Side (Left Column) -->
+  <div
+    class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 shadow-lg flex flex-col justify-between"
+  >
+    <div>
+      <h2 class="text-sm sm:text-base font-semibold text-slate-100 mb-4">
+        Log New Reading
+      </h2>
+
+      <div id="feedback" class="mb-4 min-h-[1rem]"></div>
+
+      <form
+        hx-post="/readings"
+        hx-target="#feedback"
+        hx-swap="innerHTML"
+        hx-on::after-request="if(event.detail.successful) { htmx.trigger('#readings-table-content', 'readingAdded') }"
+        class="space-y-4"
+      >
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1"
+            >Date</label
+          >
+          <input
+            type="date"
+            name="date"
+            value="%# todayDate "
+            required
+            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <!-- Solar Generation Input -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1"
+            >Solar Generated (kWh)</label
+          >
+          <input
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            name="solar_units"
+            placeholder="e.g. 14.50"
+            required
+            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1"
+            >Export Reading (kWh)</label
+          >
+          <input
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            name="export_units"
+            placeholder="e.g. 1420.50"
+            required
+            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1"
+            >Import Reading (kWh)</label
+          >
+          <input
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            name="import_units"
+            placeholder="e.g. 850.25"
+            required
+            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold py-2.5 rounded text-sm transition-colors mt-2"
+        >
+          Save Reading
+        </button>
+      </form>
+    </div>
+
+    <div
+      class="mt-6 pt-4 border-t border-slate-800/60 hidden lg:block text-[11px] text-slate-500 font-mono"
+    >
+      System status: Active filestore
+    </div>
+  </div>
+
+  <!-- Table Side (Right Column - Expands across remaining screen space) -->
+  <div
+    class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-4 sm:p-6 shadow-lg flex flex-col min-h-0"
+  >
+    <div class="flex items-center justify-between mb-4 shrink-0">
+      <h2 class="text-sm sm:text-base font-semibold text-slate-100">
+        Logged Data Records
+      </h2>
+      <span class="text-xs text-slate-400 font-mono">
+        {{len(readings)}} total entries</span
+      >
+    </div>
+
+    <!-- Desktop View (Stretches to bottom of viewport) -->
+    <div
+      id="readings-table-content"
+      hx-trigger="readingAdded"
+      hx-get="/app/entry/readings-table"
+      hx-swap="innerHTML"
+      class="w-full md:block overflow-y-auto flex-1 border border-slate-800/60 rounded"
+    >
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead
+          class="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 z-10"
+        >
+          <tr>
+            <th class="p-3">Date</th>
+            <th class="p-3">Solar Gen</th>
+            <th class="p-3">Export</th>
+            <th class="p-3">Import</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/50">
+          %if not readings:
+          <tr>
+            <td colspan="4" class="p-6 text-center text-slate-500">
+              No readings logged yet.
+            </td>
+          </tr>
+          % else:
+          <span></span>
+          % for r in readings:
+          <tr class="hover:bg-slate-800/30 transition-colors">
+            <td class="p-3 font-medium text-slate-200">
+              {{r.date.strftime('%d/%m/%Y')}}
+            </td>
+            <td class="p-3 text-amber-400 font-mono">
+              {{f"{r.solar_units:.2f}"}} kWh
+            </td>
+            <td class="p-3 text-emerald-400 font-mono">
+              {{f"{r.export_units:.2f}"}} kWh
+            </td>
+            <td class="p-3 text-red-400 font-mono">
+              {{f"{r.import_units:.2f}"}} kWh
+            </td>
+          </tr>
+          % end
+          <span></span>
+          % end
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- %# end  -->

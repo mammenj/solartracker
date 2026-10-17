@@ -2,7 +2,11 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+<<<<<<< HEAD
 
+=======
+from contextlib import closing
+>>>>>>> nefix
 from libsolar import MeterReading
 
 
@@ -23,7 +27,11 @@ class MeterReadingStore:
     def _init_schema(self) -> None:
         """Create the readings table if it doesn't exist."""
         print("db is----->> ", self.db_filepath)
+<<<<<<< HEAD
         with sqlite3.connect(self.db_filepath) as conn:
+=======
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+>>>>>>> nefix
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS meter_records (
@@ -47,7 +55,11 @@ class MeterReadingStore:
             List of MeterReading objects sorted by date.
         """
         readings = []
+<<<<<<< HEAD
         with sqlite3.connect(self.db_filepath) as conn:
+=======
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+>>>>>>> nefix
             cursor = conn.cursor()
             if last_id is None:
                 cursor = conn.execute(
@@ -76,7 +88,11 @@ class MeterReadingStore:
             List of MeterReading objects sorted by date.
         """
         readings = []
+<<<<<<< HEAD
         with sqlite3.connect(self.db_filepath) as conn:
+=======
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+>>>>>>> nefix
             cursor = conn.execute(
                 "SELECT id, date, import, export, solar_gen FROM meter_records ORDER BY date ASC"
             )
@@ -101,7 +117,11 @@ class MeterReadingStore:
         date_str = reading.date.strftime("%Y-%m-%d")
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
+<<<<<<< HEAD
         with sqlite3.connect(self.db_filepath) as conn:
+=======
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+>>>>>>> nefix
             # Check if reading exists for this date
             cursor = conn.execute(
                 "SELECT id FROM meter_records WHERE date = ?", (date_str,)

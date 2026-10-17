@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import NamedTuple
 
@@ -13,18 +14,23 @@ class AppConfig(NamedTuple):
     host: str
     port: int
     server: str
+    version: str
 
 
 def load_config() -> AppConfig:
     """Load host/port/server from config.json and db from CLI or config.json."""
     project_root = Path(__file__).resolve().parent
     config_file = project_root / "config.json"
+    version: "str"
+
+    #    env_vars = _load_env(env_file)
 
     defaults = {
         "host": "localhost",
         "port": 8080,
         "server": "gunicorn",
         "db": "meter_logs.db",
+        "version": "1.0.0",
     }
 
     if config_file.exists():
@@ -56,4 +62,5 @@ def load_config() -> AppConfig:
         host=defaults.get("host", "localhost"),
         port=defaults.get("port", 8080),
         server=defaults.get("server", "gunicorn"),
+        version=defaults.get("version", "1.0.0"),
     )
