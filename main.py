@@ -17,6 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Load configuration
 config = load_config()
 store = MeterReadingStore(config.db_file)
+db_name = Path(config.db_file).name
 
 
 def get_periods() -> list[ReadingPeriod]:
@@ -152,7 +153,7 @@ def index():
         totals=totals,
         chartdata=json.dumps(get_chart_data()),
         version=config.app_version,
-        db_name=config.db_file,
+        db_name=db_name,
     )
 
 
@@ -172,7 +173,7 @@ def dashboard():
         totals=totals,
         chartdata=json.dumps(get_chart_data()),
         version=config.app_version,
-        db_name=config.db_file,
+        db_name=db_name,
     )
 
 
@@ -197,7 +198,7 @@ def entry():
         "templates/entry.html",
         readings=readings,
         version=config.app_version,
-        db_name=config.db_file,
+        db_name=db_name,
     )
 
 

@@ -152,12 +152,12 @@
         class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10"
       >
         <tr>
-          <th class="p-2.5">Period</th>
-          <th class="p-2.5">Days</th>
-          <th class="p-2.5">Imported</th>
-          <th class="p-2.5">Exported</th>
-          <th class="p-2.5">Net</th>
-          <th class="p-2.5">Consumed</th>
+          <th class="p-1">Period</th>
+          <th class="p-1">Days</th>
+          <th class="p-1">Import(kWh)</th>
+          <th class="p-1">Export(kWh)</th>
+          <th class="p-1">Net(kWh)</th>
+          <th class="p-1">Use(kWh/d)</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-800/60">
@@ -165,24 +165,22 @@
         % for p in periods:
 
         <tr class="hover:bg-slate-800/30 transition-colors">
-          <td class="p-3 text-slate-200 font-normal">
+          <td class="p-1 text-slate-200 font-normal">
             {{p.start.date.strftime('%d.%b')}} -
             {{p.end.date.strftime('%d.%b.%y')}}
           </td>
-          <td class="p-2 font-mono text-slate-400">{{p.days}}d</td>
-          <td class="p-2 text-red-400 font-mono">
-            {{f"{p.import_diff:.2f}"}} kWh
+          <td class="p-1 font-mono text-slate-400">{{p.days}}d</td>
+          <td class="p-1 text-red-400 font-mono">{{f"{p.import_diff:.2f}"}}</td>
+          <td class="p-1 text-emerald-400 font-mono">
+            {{f"{p.export_diff:.2f}"}}
           </td>
-          <td class="p-2 text-emerald-400 font-mono">
-            {{f"{p.export_diff:.2f}"}} kWh
+          <td class="p-1 font-bold font-mono text-emerald-400">
+            {{f"{p.net_balance:.2f}"}}
           </td>
-          <td class="p-2 font-bold font-mono text-emerald-400">
-            {{f"{p.net_balance:.2f}"}} kWh
-          </td>
-          <td class="p-2 font-bold font-mono text-cyan-400">
-            {{f"{p.consumption:.2f}"}} kWh
-            <span class="text-slate-500 font-normal text-[10px] font-sans"
-              >{{f"{p.avg_daily_consumption:.2f}"}} kW/d</span
+          <td class="p-1 font-bold font-mono text-cyan-400">
+            {{f"{p.consumption:.2f}"}}
+            <span class="text-slate-500 font-mono text-xs font-sans"
+              >{{f"{p.avg_daily_consumption:.2f}"}}</span
             >
           </td>
         </tr>
