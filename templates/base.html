@@ -42,7 +42,8 @@
       </div>
 
       <!-- Desktop Tab Navigation Bar -->
-      <nav class="hidden md:flex h-full gap-1">
+      <nav class="hidden md:flex h-full gap-1 items-center">
+        % if user:
         <button
           hx-get="/app/dashboard"
           hx-target="#tab-content"
@@ -53,6 +54,7 @@
         >
           Dashboard Summary
         </button>
+        % if user['role'] == 'admin':
         <button
           hx-get="/app/entry"
           hx-target="#tab-content"
@@ -63,15 +65,39 @@
         >
           Data Entry
         </button>
+        <button
+          hx-get="/admin/users"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          @click="activeTab = 'admin'"
+          :class="activeTab === 'admin' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
+          class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
+        >
+          Admin
+        </button>
+        % end
+        % else:
+        <button
+          hx-get="/login"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          class="px-5 h-full border-b-2 flex items-center text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 transition-all duration-150"
+        >
+          Login
+        </button>
+        % end
       </nav>
 
-      <div
-        class="text-[11px] sm:text-xs text-slate-400 font-mono flex items-center gap-1.5"
-      >
-        <span
-          class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"
-        ></span>
+      <div class="text-[11px] sm:text-xs text-slate-400 font-mono flex items-center gap-1.5">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
         <span class="hidden sm:inline">System</span>{{db_name}}
+        % if user:
+        <span class="mx-1 text-slate-600">|</span>
+        <span class="text-emerald-400">{{user['username']}} ({{user['role']}})</span>
+        <form method="post" action="/logout" class="inline">
+          <button type="submit" class="text-slate-400 hover:text-red-400 text-xs font-mono p-0 bg-none border-none cursor-pointer">Logout</button>
+        </form>
+        % end
       </div>
     </header>
 
@@ -88,6 +114,7 @@
     <nav
       class="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 border-t border-slate-800 flex justify-around p-1.5 z-50 backdrop-blur"
     >
+      % if user:
       <button
         hx-get="/app/dashboard"
         hx-target="#tab-content"
@@ -99,7 +126,7 @@
         <span class="text-base mb-0.5">📊</span>
         <span class="text-[10px] tracking-tight">Dashboard</span>
       </button>
-
+      % if user['role'] == 'admin':
       <button
         hx-get="/app/entry"
         hx-target="#tab-content"
@@ -111,6 +138,29 @@
         <span class="text-base mb-0.5">📝</span>
         <span class="text-[10px] tracking-tight">Data Entry</span>
       </button>
+      <button
+        hx-get="/admin/users"
+        hx-target="#tab-content"
+        hx-swap="innerHTML"
+        @click="activeTab = 'admin'"
+        :class="activeTab === 'admin' ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+        class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
+      >
+        <span class="text-base mb-0.5">⚙️</span>
+        <span class="text-[10px] tracking-tight">Admin</span>
+      </button>
+      % end
+      % else:
+      <button
+        hx-get="/login"
+        hx-target="#tab-content"
+        hx-swap="innerHTML"
+        class="flex flex-col items-center py-1 px-3 text-xs transition-colors text-slate-400"
+      >
+        <span class="text-base mb-0.5">🔐</span>
+        <span class="text-[10px] tracking-tight">Login</span>
+      </button>
+      % end
     </nav>
     <footer>
       <div

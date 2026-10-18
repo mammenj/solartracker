@@ -3,5 +3,8 @@
   "port": 3000,
   "server": "waitress",
   "db": "meter_logs.db",
-  "version": "2.0.0-nefix"
+  "version": "2.0.0-nefix",
+  "auth_db": "auth.db",
+  "data_dir": "data",
+  "auth_secret": "change-me-in-production-use-env"
 }

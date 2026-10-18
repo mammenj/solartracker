@@ -15,6 +15,9 @@ class AppConfig(NamedTuple):
     port: int
     server: str
     app_version: str
+    auth_db_file: Path
+    data_dir: Path
+    auth_secret: str
 
 
 def _load_env(env_file: Path) -> dict:
@@ -50,6 +53,9 @@ def load_config() -> AppConfig:
         "server": "gunicorn",
         "db": "meter_logs.db",
         "version": "1.0.0",
+        "auth_db": "auth.db",
+        "data_dir": "data",
+        "auth_secret": "change-me-in-production",
     }
 
     if config_file.exists():
@@ -76,10 +82,21 @@ def load_config() -> AppConfig:
     if not db_path.is_absolute():
         db_path = project_root / db_path
 
+    project_root = Path(__file__).resolve().parent
+    auth_db_path = Path(defaults.get("auth_db", "auth.db"))
+    if not auth_db_path.is_absolute():
+        auth_db_path = project_root / auth_db_path
+    data_dir_path = Path(defaults.get("data_dir", "data"))
+    if not data_dir_path.is_absolute():
+        data_dir_path = project_root / data_dir_path
+
     return AppConfig(
         db_file=db_path,
         host=defaults.get("host", "localhost"),
         port=defaults.get("port", 8080),
         server=defaults.get("server", "gunicorn"),
         app_version=defaults.get("version", "1.0.0"),
+        auth_db_file=auth_db_path,
+        data_dir=data_dir_path,
+        auth_secret=defaults.get("auth_secret", "change-me-in-production"),
     )

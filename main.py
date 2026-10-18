@@ -1,14 +1,28 @@
+import functools
 import json
 from datetime import datetime
 from math import ceil
 from pathlib import Path
 
 import bottle
-from bottle import Bottle, request, run, template, static_file
+from bottle import Bottle, request, response, run, template, static_file, redirect
 
 from config import load_config
 from libsolar import EnergyExtrapolator, MeterReading, ReadingPeriod, TotalsDict
 from libsolar_sqlite import MeterReadingStore
+from auth import (
+    init_auth_db,
+    create_user,
+    get_user,
+    get_user_by_id,
+    verify_password,
+    create_session,
+    verify_session,
+    list_users,
+    update_user,
+    count_users,
+    ensure_user_db,
+)
 import os
 
 # Web App Setup
@@ -17,13 +31,48 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Load configuration
 config = load_config()
-store = MeterReadingStore(config.db_file)
+
+# Initialize auth DB
+init_auth_db()
+
 db_name = Path(config.db_file).name
+
+
+def get_user_store() -> MeterReadingStore:
+    """Get the MeterReadingStore for the current authenticated user."""
+    if not hasattr(request, "store"):
+        # Fallback for legacy/compat - uses default DB
+        request.store = MeterReadingStore(config.db_file)
+    return request.store
+
+
+def require_auth(roles: list[str] | None = None):
+    """Decorator: validate session, check role, inject user + store into request."""
+    def decorator(callback):
+        @functools.wraps(callback)
+        def wrapper(*a, **kw):
+            token = request.get_cookie("session")
+            user_id = verify_session(token) if token else None
+            if not user_id:
+                return redirect("/login")
+            user = get_user_by_id(user_id)
+            if not user or user["status"] != "approved":
+                response.delete_cookie("session")
+                return redirect("/login?error=not_approved")
+            if roles and user["role"] not in roles:
+                response.status = 403
+                return "Forbidden: insufficient role"
+            # Attach user and their store to request
+            request.user = user
+            request.store = MeterReadingStore(ensure_user_db(user["db_file"]))
+            return callback(*a, **kw)
+        return wrapper
+    return decorator
 
 
 def get_periods() -> list[ReadingPeriod]:
     """Get all reading periods from the database."""
-    readings = store.load_all()
+    readings = get_user_store().load_all()
     return [
         ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
     ]
@@ -39,7 +88,7 @@ def get_periods() -> list[ReadingPeriod]:
 
 def get_readings() -> list[MeterReading]:
     """Get all reading periods from the database."""
-    r = store.load_all()
+    r = get_user_store().load_all()
     r.sort(key=lambda r: r.date, reverse=True)
     return r
 
@@ -82,7 +131,7 @@ def get_totals(periods: list[ReadingPeriod] | None = None) -> TotalsDict:
 
 def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
     """Validate a new reading against the last stored reading."""
-    readings = store.load_all()
+    readings = get_user_store().load_all()
     if not readings:
         return True, ""
 
@@ -141,6 +190,7 @@ def get_chart_data(periods: list[ReadingPeriod] | None = None):
 
 
 @app.get("/")
+@require_auth()
 def index():
     periods = get_periods()
     totals: TotalsDict = get_totals(periods)
@@ -150,11 +200,13 @@ def index():
         chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=db_name,
+        user=request.user,
         **get_period_display_params(periods),
     )
 
 
 @app.get("/app/dashboard/periods-table")
+@require_auth()
 def dashboard_periods_table():
     """Return the dashboard periods table partial for HTMX refresh."""
     return template(
@@ -164,6 +216,7 @@ def dashboard_periods_table():
 
 
 @app.get("/app/dashboard")
+@require_auth()
 def dashboard():
     # Compute periods ONCE from the full dataset — totals and the chart are
     # always calculated from every period; only the table display is paged.
@@ -175,6 +228,7 @@ def dashboard():
         chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=db_name,
+        user=request.user,
         **get_period_display_params(periods),
     )
 
@@ -187,6 +241,159 @@ def send_static(filename):
     # Join the directory path cleanly with your static folder
     static_path = os.path.join(BASE_DIR, "static")
     return static_file(filename, root=static_path)
+
+
+# --- Auth routes ---
+
+@app.get("/login")
+def login_page():
+    # Redirect already authenticated users
+    token = request.get_cookie("session")
+    if token and verify_session(token):
+        return redirect("/app/dashboard")
+    error = request.params.get("error")
+    return template("templates/login.html", error=error, version=config.app_version)
+
+
+@app.post("/login")
+def login_post():
+    username = request.forms.get("username", "").strip()
+    password = request.forms.get("password", "")
+    user = get_user(username)
+    if not user or not verify_password(password, user["password_hash"]):
+        return template("templates/login.html", error="Invalid username or password", version=config.app_version)
+    if user["status"] != "approved":
+        return template("templates/login.html", error="Account not approved. Contact admin.", version=config.app_version)
+    token = create_session(user["id"])
+    response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
+    return redirect("/app/dashboard")
+
+
+@app.post("/logout")
+def logout():
+    response.delete_cookie("session", path="/")
+    return redirect("/login")
+
+
+# --- Admin user management routes ---
+
+@app.get("/admin/users")
+@require_auth(["admin"])
+def admin_users():
+    from math import ceil
+    try:
+        page = max(1, int(request.params.get("page", "1")))
+    except (ValueError, TypeError):
+        page = 1
+    sort = request.params.get("sort", "username")
+    order = request.params.get("order", "asc")
+    users, total = list_users(page, 10, sort, order)
+    total_pages = max(1, ceil(total / 10)) if total else 1
+    page = min(page, total_pages)
+
+    headers = sortable_headers(sort, order, [
+        ("username", "Username"),
+        ("full_name", "Full Name"),
+        ("role", "Role"),
+        ("status", "Status"),
+        ("created_at", "Created"),
+    ])
+
+    return template(
+        "templates/admin_users.html",
+        users=users,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        sort=sort,
+        order=order,
+        headers=headers,
+        version=config.app_version,
+        db_name=db_name,
+    )
+
+
+@app.get("/admin/users/new")
+@require_auth(["admin"])
+def admin_user_new():
+    return template("templates/admin_user_form.html", user=None, errors=[], version=config.app_version, db_name=db_name)
+
+
+@app.post("/admin/users")
+@require_auth(["admin"])
+def admin_user_create():
+    username = request.forms.get("username", "").strip()
+    password = request.forms.get("password", "")
+    full_name = request.forms.get("full_name", "").strip()
+    role = request.forms.get("role", "user")
+    status = request.forms.get("status", "pending")
+    db_file = request.forms.get("db_file", "").strip()
+
+    errors = []
+    if not username:
+        errors.append("Username required")
+    if get_user(username):
+        errors.append("Username already exists")
+    if not password:
+        errors.append("Password required")
+    if len(password) < 8:
+        errors.append("Password must be at least 8 characters")
+    if not full_name:
+        errors.append("Full name required")
+    if role not in ("admin", "user"):
+        errors.append("Invalid role")
+    if status not in ("pending", "approved", "disabled"):
+        errors.append("Invalid status")
+    if not db_file:
+        errors.append("Database file required")
+
+    if errors:
+        return template("templates/admin_user_form.html", user=None, errors=errors, version=config.app_version, db_name=db_name)
+
+    try:
+        create_user(username, password, full_name, role, db_file, status)
+    except Exception as e:
+        return template("templates/admin_user_form.html", user=None, errors=[str(e)], version=config.app_version, db_name=db_name)
+
+    return redirect("/admin/users")
+
+
+@app.get("/admin/users/<user_id:int>/edit")
+@require_auth(["admin"])
+def admin_user_edit(user_id: int):
+    user = get_user_by_id(user_id)
+    if not user:
+        return redirect("/admin/users")
+    return template("templates/admin_user_form.html", user=user, errors=[], version=config.app_version, db_name=db_name)
+
+
+@app.post("/admin/users/<user_id:int>")
+@require_auth(["admin"])
+def admin_user_update(user_id: int):
+    user = get_user_by_id(user_id)
+    if not user:
+        return redirect("/admin/users")
+
+    full_name = request.forms.get("full_name", "").strip()
+    role = request.forms.get("role", "user")
+    status = request.forms.get("status", "pending")
+    db_file = request.forms.get("db_file", "").strip()
+
+    errors = []
+    if not full_name:
+        errors.append("Full name required")
+    if role not in ("admin", "user"):
+        errors.append("Invalid role")
+    if status not in ("pending", "approved", "disabled"):
+        errors.append("Invalid status")
+    if not db_file:
+        errors.append("Database file required")
+
+    if errors:
+        return template("templates/admin_user_form.html", user=user, errors=errors, version=config.app_version, db_name=db_name)
+
+    update_user(user_id, full_name=full_name, role=role, status=status, db_file=db_file)
+    return redirect("/admin/users")
 
 
 def sortable_headers(sort: str, order: str, fields: list[tuple[str, str]]) -> list[dict]:
@@ -236,7 +443,7 @@ def get_display_params() -> dict:
     order = order if order in ("asc", "desc") else "desc"
 
     page_size = 10
-    readings, total = store.load_page(sort, order, page, page_size)
+    readings, total = get_user_store().load_page(sort, order, page, page_size)
     total_pages = max(1, ceil(total / page_size)) if total else 1
 
     return {
@@ -334,17 +541,20 @@ def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
 
 
 @app.get("/app/entry")
+@require_auth(["admin"])
 def entry():
     ctx = get_display_params()
     return template(
         "templates/entry.html",
         version=config.app_version,
         db_name=db_name,
+        user=request.user,
         **ctx,
     )
 
 
 @app.get("/app/entry/readings-table")
+@require_auth(["admin"])
 def entry_readings_table():
     """Return the readings table partial for HTMX refresh."""
     ctx = get_display_params()
@@ -352,6 +562,7 @@ def entry_readings_table():
 
 
 @app.post("/readings")
+@require_auth(["admin"])
 def add_reading():
     try:
         date_str = request.forms.get("date")
@@ -369,7 +580,7 @@ def add_reading():
     if not is_valid:
         return f"<div class='alert-error'>❌ {err_msg}</div>"
 
-    is_update = store.save_or_update(new_reading)
+    is_update = get_user_store().save_or_update(new_reading)
 
     msg = (
         f"✓ Updated record for {curr_date.strftime('%d-%b-%Y')}."

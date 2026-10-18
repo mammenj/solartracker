@@ -1,0 +1,119 @@
+<div class="min-h-0 flex-1 flex flex-col gap-4">
+  <div class="flex items-center justify-between mb-4 shrink-0">
+    <h2 class="text-xs sm:text-sm font-semibold text-slate-200">{{ 'Edit User' if user else 'Create User' }}</h2>
+    <a
+      href="/admin/users"
+      hx-get="/admin/users"
+      hx-target="#tab-content"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded transition-colors"
+    >
+      ← Back
+    </a>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 flex-1 max-w-md">
+    % if errors:
+    <div class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-300 text-sm space-y-1">
+      % for e in errors:
+      <div>• {{e}}</div>
+      % end
+    </div>
+    % end
+
+    <form method="post" action="{{ '/admin/users' if not user else '/admin/users/' + str(user['id']) }}" class="space-y-4">
+      <input type="hidden" name="_method" value="{{ 'PUT' if user else 'POST' }}">
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+        % if user:
+        <input type="text" value="{{user['username']}}" readonly class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-500 cursor-not-allowed" />
+        <input type="hidden" name="username" value="{{user['username']}}" />
+        % else:
+        <input
+          type="text"
+          name="username"
+          required
+          autocomplete="username"
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+        />
+        % end
+      </div>
+
+      % if not user:
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+        <input
+          type="password"
+          name="password"
+          required
+          autocomplete="new-password"
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+        />
+        <p class="text-[10px] text-slate-500 mt-1">Minimum 8 characters</p>
+      </div>
+      % end
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
+        <input
+          type="text"
+          name="full_name"
+          value="{{ user['full_name'] if user else '' }}"
+          required
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Role</label>
+        <select name="role" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+          <option value="user" {{ 'selected' if (user and user['role'] == 'user') or not user else '' }}>User (Read-only)</option>
+          <option value="admin" {{ 'selected' if user and user['role'] == 'admin' else '' }}>Admin (Read/Write)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+        <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+          <option value="pending" {{ 'selected' if (user and user['status'] == 'pending') or not user else '' }}>Pending</option>
+          <option value="approved" {{ 'selected' if user and user['status'] == 'approved' else '' }}>Approved</option>
+          <option value="disabled" {{ 'selected' if user and user['status'] == 'disabled' else '' }}>Disabled</option>
+        </select>
+        <p class="text-[10px] text-slate-500 mt-1">Only approved users can log in</p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Database File</label>
+        <input
+          type="text"
+          name="db_file"
+          value="{{ user['db_file'] if user else 'user_new.db' }}"
+          required
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+        />
+        <p class="text-[10px] text-slate-500 mt-1">Path relative to data/ directory (e.g., user_john.db)</p>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button
+          type="submit"
+          class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold py-2.5 rounded text-sm transition-colors"
+        >
+          {{ 'Update' if user else 'Create' }}
+        </button>
+        <a
+          href="/admin/users"
+          hx-get="/admin/users"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded text-sm text-center transition-colors"
+        >
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
