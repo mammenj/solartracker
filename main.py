@@ -245,12 +245,62 @@ def send_static(filename):
 
 # --- Auth routes ---
 
+@app.get("/setup")
+def setup_page():
+    """First-run setup: create initial admin user if no users exist."""
+    if count_users() > 0:
+        return redirect("/login")
+    return template("templates/setup.html", errors=[], version=config.app_version)
+
+
+@app.post("/setup")
+def setup_post():
+    """Process first-run setup form."""
+    if count_users() > 0:
+        return redirect("/login")
+
+    username = request.forms.get("username", "").strip()
+    password = request.forms.get("password", "")
+    full_name = request.forms.get("full_name", "").strip()
+    db_file = request.forms.get("db_file", "meter_logs.db").strip()
+
+    errors = []
+    if not username:
+        errors.append("Username required")
+    if get_user(username):
+        errors.append("Username already exists")
+    if not password:
+        errors.append("Password required")
+    if len(password) < 8:
+        errors.append("Password must be at least 8 characters")
+    if not full_name:
+        errors.append("Full name required")
+    if not db_file:
+        errors.append("Database file required")
+
+    if errors:
+        return template("templates/setup.html", errors=errors, version=config.app_version)
+
+    try:
+        user_id = create_user(username, password, full_name, "admin", db_file, "approved")
+        # Ensure the DB exists
+        ensure_user_db(db_file)
+        token = create_session(user_id)
+        response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
+        return redirect("/app/dashboard")
+    except Exception as e:
+        return template("templates/setup.html", errors=[str(e)], version=config.app_version)
+
+
 @app.get("/login")
 def login_page():
     # Redirect already authenticated users
     token = request.get_cookie("session")
     if token and verify_session(token):
         return redirect("/app/dashboard")
+    # Redirect to setup if no users exist
+    if count_users() == 0:
+        return redirect("/setup")
     error = request.params.get("error")
     return template("templates/login.html", error=error, version=config.app_version)
 

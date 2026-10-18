@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>First-Time Setup - Solar Monitor</title>
+    <script src="/static/tailwind.css"></script>
+    <script src="/static/htmx.min.js" defer></script>
+    <script src="/static/alpine.min.js" defer></script>
+  </head>
+  <body class="h-full flex items-center justify-center bg-slate-950 px-4">
+    <div class="w-full max-w-md">
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 sm:p-8 shadow-xl">
+        <div class="text-center mb-6">
+          <div class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse mx-auto mb-3"></div>
+          <h1 class="font-semibold text-slate-100 tracking-wide text-lg sm:text-xl">
+            SOLAR MONITOR
+            <span class="text-[10px] sm:text-xs text-slate-500 ml-1 font-mono">v{{version}}</span>
+          </h1>
+          <p class="text-slate-500 text-sm mt-1">First-time setup: create administrator account</p>
+        </div>
+
+        % if errors:
+        <div class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-300 text-sm space-y-1">
+          % for e in errors:
+          <div>• {{e}}</div>
+          % end
+        </div>
+        % end
+
+        <form method="post" action="/setup" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+            <input
+              type="text"
+              name="username"
+              value="admin"
+              required
+              autocomplete="username"
+              class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+            <input
+              type="password"
+              name="password"
+              required
+              autocomplete="new-password"
+              class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+            />
+            <p class="text-[10px] text-slate-500 mt-1">Minimum 8 characters</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
+            <input
+              type="text"
+              name="full_name"
+              value="Administrator"
+              required
+              class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Database File</label>
+            <input
+              type="text"
+              name="db_file"
+              value="meter_logs.db"
+              required
+              class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+            />
+            <p class="text-[10px] text-slate-500 mt-1">Path relative to data/ directory. Use existing meter_logs.db to keep current data.</p>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold py-2.5 rounded text-sm transition-colors"
+          >
+            Create Admin & Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
