@@ -201,6 +201,7 @@ def index():
         version=config.app_version,
         db_name=db_name,
         user=request.user,
+        initial_tab="dashboard",
         **get_period_display_params(periods),
     )
 
@@ -218,8 +219,25 @@ def dashboard_periods_table():
 @app.get("/app/dashboard")
 @require_auth()
 def dashboard():
-    # Compute periods ONCE from the full dataset — totals and the chart are
-    # always calculated from every period; only the table display is paged.
+    # Full page render (like /) — includes base.html with CSS
+    periods = get_periods()
+    totals: TotalsDict = get_totals(periods)
+    return template(
+        "templates/base.html",
+        totals=totals,
+        chartdata=json.dumps(get_chart_data(periods)),
+        version=config.app_version,
+        db_name=db_name,
+        user=request.user,
+        initial_tab="dashboard",
+        **get_period_display_params(periods),
+    )
+
+
+@app.get("/app/dashboard/partial")
+@require_auth()
+def dashboard_partial():
+    """Partial render for htmx tab navigation."""
     periods = get_periods()
     totals: TotalsDict = get_totals(periods)
     return template(
@@ -350,7 +368,11 @@ def admin_users():
     ])
 
     return template(
-        "templates/admin_users.html",
+        "templates/base.html",
+        version=config.app_version,
+        db_name=db_name,
+        user=request.user,
+        initial_tab="admin",
         users=users,
         total=total,
         page=page,
@@ -358,8 +380,6 @@ def admin_users():
         sort=sort,
         order=order,
         headers=headers,
-        version=config.app_version,
-        db_name=db_name,
     )
 
 
@@ -593,6 +613,27 @@ def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
 @app.get("/app/entry")
 @require_auth(["admin"])
 def entry():
+    # Full page render — includes base.html with CSS
+    ctx = get_display_params()
+    # Also need totals/chartdata for base.html initial load
+    periods = get_periods()
+    totals: TotalsDict = get_totals(periods)
+    return template(
+        "templates/base.html",
+        version=config.app_version,
+        db_name=db_name,
+        user=request.user,
+        initial_tab="entry",
+        totals=totals,
+        chartdata=json.dumps(get_chart_data(periods)),
+        **ctx,
+    )
+
+
+@app.get("/app/entry/partial")
+@require_auth(["admin"])
+def entry_partial():
+    """Partial render for htmx tab navigation."""
     ctx = get_display_params()
     return template(
         "templates/entry.html",

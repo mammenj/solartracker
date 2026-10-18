@@ -45,7 +45,7 @@
       <nav class="hidden md:flex h-full gap-1 items-center">
         % if user:
         <button
-          hx-get="/app/dashboard"
+          hx-get="/app/dashboard/partial"
           hx-target="#tab-content"
           hx-swap="innerHTML"
           @click="activeTab = 'dashboard'"
@@ -56,7 +56,7 @@
         </button>
         % if user['role'] == 'admin':
         <button
-          hx-get="/app/entry"
+          hx-get="/app/entry/partial"
           hx-target="#tab-content"
           hx-swap="innerHTML"
           @click="activeTab = 'entry'"
@@ -106,8 +106,14 @@
       id="tab-content"
       class="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-950"
     >
-      <!-- Initial Load: Dashboard Tab Content -->
+      <!-- Initial Load: Tab Content -->
+      % if initial_tab == 'entry':
+      % include("templates/entry.html")
+      % elif initial_tab == 'admin':
+      % include("templates/admin_users.html")
+      % else:
       % include("templates/dashboard.html")
+      % end
     </main>
 
     <!-- Fixed Bottom Navigation Bar (Mobile Only) -->
@@ -116,7 +122,7 @@
     >
       % if user:
       <button
-        hx-get="/app/dashboard"
+        hx-get="/app/dashboard/partial"
         hx-target="#tab-content"
         hx-swap="innerHTML"
         @click="activeTab = 'dashboard'"
@@ -128,7 +134,7 @@
       </button>
       % if user['role'] == 'admin':
       <button
-        hx-get="/app/entry"
+        hx-get="/app/entry/partial"
         hx-target="#tab-content"
         hx-swap="innerHTML"
         @click="activeTab = 'entry'"
