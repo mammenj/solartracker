@@ -11,6 +11,3 @@ wheels/
 .venv
 
 # Generated databases and data
-auth.db
-data/
-*.db
