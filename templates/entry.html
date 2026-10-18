@@ -103,59 +103,12 @@
         Logged Data Records
       </h2>
       <span class="text-xs text-slate-400 font-mono">
-        {{len(readings)}} total entries</span
+        {{total}} total entries</span
       >
     </div>
 
-    <!-- Desktop View (Stretches to bottom of viewport) -->
-    <div
-      id="readings-table-content"
-      hx-trigger="readingAdded"
-      hx-get="/app/entry/readings-table"
-      hx-swap="innerHTML"
-      class="w-full md:block overflow-y-auto flex-1 border border-slate-800/60 rounded"
-    >
-      <table class="w-full text-left text-xs text-slate-300">
-        <thead
-          class="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 z-10"
-        >
-          <tr>
-            <th class="p-3">Date</th>
-            <th class="p-3">Solar Gen</th>
-            <th class="p-3">Export</th>
-            <th class="p-3">Import</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-800/50">
-          %if not readings:
-          <tr>
-            <td colspan="4" class="p-6 text-center text-slate-500">
-              No readings logged yet.
-            </td>
-          </tr>
-          % else:
-          <span></span>
-          % for r in readings:
-          <tr class="hover:bg-slate-800/30 transition-colors">
-            <td class="p-3 font-medium text-slate-200">
-              {{r.date.strftime('%d/%m/%Y')}}
-            </td>
-            <td class="p-3 text-amber-400 font-mono">
-              {{f"{r.solar_units:.2f}"}} kWh
-            </td>
-            <td class="p-3 text-emerald-400 font-mono">
-              {{f"{r.export_units:.2f}"}} kWh
-            </td>
-            <td class="p-3 text-red-400 font-mono">
-              {{f"{r.import_units:.2f}"}} kWh
-            </td>
-          </tr>
-          % end
-          <span></span>
-          % end
-        </tbody>
-      </table>
-    </div>
+    <!-- Readings table: server-side paging + column sorting via htmx -->
+    % include("templates/table_readings.html")
   </div>
 </div>
 <!-- %# end  -->

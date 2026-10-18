@@ -1,0 +1,107 @@
+<div
+  id="periods-table-content"
+  class="w-full overflow-x-auto"
+>
+  <table class="w-full text-left text-xs text-slate-300">
+    <thead
+      class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10"
+    >
+      <tr>
+        % for h in headers:
+        <th
+          class="p-1 cursor-pointer select-none whitespace-nowrap hover:text-slate-100 {{'text-emerald-400' if h['active'] else ''}}"
+          hx-get="/app/dashboard/periods-table"
+          hx-vals='{"page": 1, "sort": "{{h['key']}}", "order": "{{h['next_order']}}"}'
+          hx-target="#periods-table-content"
+          hx-swap="outerHTML"
+          title="Click to sort by {{h['label']}}"
+        >
+          {{h['label']}}{{h['arrow']}}
+        </th>
+        % end
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-800/60">
+      % for r in periods:
+      <tr class="hover:bg-slate-800/30 transition-colors">
+        <td class="p-1 text-slate-200 font-normal">
+          {{r['start'].strftime('%d.%b')}} -
+          {{r['end'].strftime('%d.%b.%y')}}
+        </td>
+        <td class="p-1 font-mono text-slate-400">{{r['days']}}d</td>
+        <td class="p-1 text-red-400 font-mono">{{f"{r['import']:.2f}"}}</td>
+        <td class="p-1 text-emerald-400 font-mono">
+          {{f"{r['export']:.2f}"}}
+        </td>
+        <td class="p-1 font-bold font-mono text-emerald-400">
+          {{f"{r['net']:.2f}"}}
+        </td>
+        <td class="p-1 font-bold font-mono text-cyan-400">
+          {{f"{r['consumption']:.2f}"}}
+          <span class="text-slate-500 font-mono text-xs font-sans"
+            >{{f"{r['avg']:.2f}"}}</span
+          >
+        </td>
+      </tr>
+      % end
+      % if not periods:
+      <tr>
+        <td colspan="6" class="p-6 text-center text-slate-500">
+          No records found. Switch to Data Entry tab to log readings.
+        </td>
+      </tr>
+      % end
+    </tbody>
+  </table>
+
+  <!-- Pagination footer (server-rendered, htmx-driven) -->
+  <div
+    class="flex items-center justify-between gap-2 px-1 py-2 border-t border-slate-800 text-xs text-slate-400"
+  >
+    <span class="font-mono whitespace-nowrap">
+      {{total}} periods · Page {{page}} of {{total_pages}}
+    </span>
+    <div class="flex items-center gap-1">
+      <!-- Prev -->
+      <button
+        class="px-2 py-1 rounded {{'bg-slate-800 text-slate-200 hover:bg-slate-700' if page > 1 else 'bg-slate-900 text-slate-600 cursor-not-allowed'}}"
+        % if page > 1:
+        hx-get="/app/dashboard/periods-table"
+        hx-vals='{"page": {{page - 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
+        hx-target="#periods-table-content"
+        hx-swap="outerHTML"
+        % end
+      >
+        ‹ Prev
+      </button>
+
+      <!-- Page numbers -->
+      % for pnum in range(1, total_pages + 1):
+      <button
+        class="px-2 py-1 rounded font-mono {{'bg-emerald-600 text-slate-950 font-bold' if pnum == page else 'bg-slate-800 text-slate-300 hover:bg-slate-700'}}"
+        % if pnum != page:
+        hx-get="/app/dashboard/periods-table"
+        hx-vals='{"page": {{pnum}}, "sort": "{{sort}}", "order": "{{order}}"}'
+        hx-target="#periods-table-content"
+        hx-swap="outerHTML"
+        % end
+      >
+        {{pnum}}
+      </button>
+      % end
+
+      <!-- Next -->
+      <button
+        class="px-2 py-1 rounded {{'bg-slate-800 text-slate-200 hover:bg-slate-700' if page < total_pages else 'bg-slate-900 text-slate-600 cursor-not-allowed'}}"
+        % if page < total_pages:
+        hx-get="/app/dashboard/periods-table"
+        hx-vals='{"page": {{page + 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
+        hx-target="#periods-table-content"
+        hx-swap="outerHTML"
+        % end
+      >
+        Next ›
+      </button>
+    </div>
+  </div>
+</div>

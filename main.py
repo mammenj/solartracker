@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from math import ceil
 from pathlib import Path
 
 import bottle
@@ -65,9 +66,10 @@ def get_periods_with_weekly() -> list[dict]:
     ]
 
 
-def get_totals() -> TotalsDict:
-    """Calculate totals from all periods."""
-    periods = get_periods()
+def get_totals(periods: list[ReadingPeriod] | None = None) -> TotalsDict:
+    """Calculate totals from all periods (periods computed here if not given)."""
+    if periods is None:
+        periods = get_periods()
     return {
         "total_days": sum(p.days for p in periods),
         "total_import": sum(p.import_diff for p in periods),
@@ -109,11 +111,12 @@ def validate_reading(new_reading: MeterReading) -> tuple[bool, str]:
     return True, ""
 
 
-def get_chart_data():
-    """Return chart-ready data for the dashboard energy chart."""
-    raw_periods = get_periods()
+def get_chart_data(periods: list[ReadingPeriod] | None = None):
+    """Return chart-ready data for the dashboard energy chart (full dataset)."""
+    if periods is None:
+        periods = get_periods()
     points = []
-    for p in raw_periods:
+    for p in periods:
         solar = p.solar_yield
         consumption = p.consumption
         export = p.export_diff
@@ -139,41 +142,40 @@ def get_chart_data():
 
 @app.get("/")
 def index():
-    # today = datetime.now().strftime("%Y-%m-%d")
     periods = get_periods()
-    # periods_with_weekly = get_periods_with_weekly()
-    totals: TotalsDict = get_totals()
-    readings = get_readings()
+    totals: TotalsDict = get_totals(periods)
     return template(
         "templates/base.html",
-        # today=today,
-        periods=periods,
-        readings=readings,
-        # periods_with_weekly=periods_with_weekly,
         totals=totals,
-        chartdata=json.dumps(get_chart_data()),
+        chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=db_name,
+        **get_period_display_params(periods),
+    )
+
+
+@app.get("/app/dashboard/periods-table")
+def dashboard_periods_table():
+    """Return the dashboard periods table partial for HTMX refresh."""
+    return template(
+        "templates/table_periods.html",
+        **get_period_display_params(get_periods()),
     )
 
 
 @app.get("/app/dashboard")
 def dashboard():
-    # today = datetime.now().strftime("%Y-%m-%d")
+    # Compute periods ONCE from the full dataset — totals and the chart are
+    # always calculated from every period; only the table display is paged.
     periods = get_periods()
-    # periods_with_weekly = get_periods_with_weekly()
-    totals: TotalsDict = get_totals()
-    readings = get_readings()
+    totals: TotalsDict = get_totals(periods)
     return template(
         "templates/dashboard.html",
-        # today=today,
-        periods=periods,
-        readings=readings,
-        # periods_with_weekly=periods_with_weekly,
         totals=totals,
-        chartdata=json.dumps(get_chart_data()),
+        chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=db_name,
+        **get_period_display_params(periods),
     )
 
 
@@ -187,26 +189,166 @@ def send_static(filename):
     return static_file(filename, root=static_path)
 
 
+def sortable_headers(sort: str, order: str, fields: list[tuple[str, str]]) -> list[dict]:
+    """
+    Build sortable column-header metadata for htmx-clickable <th> elements.
+
+    Each dict has: key, label, active (bool), arrow (↑/↓ on active column),
+    next_order (clicked sort toggles asc/desc; new column gets its default).
+    """
+    headers = []
+    for key, label in fields:
+        active = key == sort
+        if active:
+            next_order = "asc" if order == "desc" else "desc"
+        else:
+            # Date-type columns default to descending (newest first),
+            # numeric columns to ascending.
+            next_order = "desc" if key == "date" or key == "start" else "asc"
+        headers.append(
+            {
+                "key": key,
+                "label": label,
+                "active": active,
+                "arrow": ("↓" if order == "desc" else "↑") if active else "",
+                "next_order": next_order,
+            }
+        )
+    return headers
+
+
+def get_display_params() -> dict:
+    """
+    Parse paging/sorting query params for the readings list and fetch the page
+    from the store (all paging/sorting happens server-side, in Python/SQL).
+
+    Returns dict with: readings, total, page, page_size, total_pages,
+    sort, order, headers.
+    """
+    try:
+        page = max(1, int(request.params.get("page", "1")))
+    except (ValueError, TypeError):
+        page = 1
+
+    sort = request.params.get("sort", "date")
+    order = request.params.get("order", "desc")
+    sort = sort if sort in MeterReadingStore.SORT_COLUMNS else "date"
+    order = order if order in ("asc", "desc") else "desc"
+
+    page_size = 10
+    readings, total = store.load_page(sort, order, page, page_size)
+    total_pages = max(1, ceil(total / page_size)) if total else 1
+
+    return {
+        "readings": readings,
+        "total": total,
+        "page": min(page, total_pages),
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "sort": sort,
+        "order": order,
+        "headers": sortable_headers(
+            sort,
+            order,
+            [
+                ("date", "Date"),
+                ("solar", "Solar Gen"),
+                ("export", "Export"),
+                ("import", "Import"),
+            ],
+        ),
+    }
+
+
+# Sortable fields for the dashboard Period Summaries table
+PERIOD_SORT_FIELDS = [
+    ("start", "Period"),
+    ("days", "Days"),
+    ("import", "Import(kWh)"),
+    ("export", "Export(kWh)"),
+    ("net", "Net(kWh)"),
+    ("consumption", "Use(kWh/d)"),
+]
+
+PERIOD_SORT_KEYS = {
+    "start": lambda r: r["start"],
+    "days": lambda r: r["days"],
+    "import": lambda r: r["import"],
+    "export": lambda r: r["export"],
+    "net": lambda r: r["net"],
+    "consumption": lambda r: r["consumption"],
+}
+
+
+def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
+    """
+    Build a paged, sorted slice of period rows for display only.
+    All calculations (totals, chart) are done on the full `periods` list —
+    this only affects what the table shows.
+    """
+    try:
+        page = max(1, int(request.params.get("page", "1")))
+    except (ValueError, TypeError):
+        page = 1
+
+    sort = request.params.get("sort", "start")
+    order = request.params.get("order", "desc")
+    if sort not in PERIOD_SORT_KEYS:
+        sort = "start"
+    if order not in ("asc", "desc"):
+        order = "desc"
+
+    # Flatten each period into a plain row (computed once, full dataset)
+    rows = [
+        {
+            "start": p.start.date,
+            "end": p.end.date,
+            "days": p.days,
+            "import": p.import_diff,
+            "export": p.export_diff,
+            "net": p.net_balance,
+            "consumption": p.consumption,
+            "avg": p.avg_daily_consumption,
+        }
+        for p in periods
+    ]
+
+    rows.sort(key=PERIOD_SORT_KEYS[sort], reverse=(order == "desc"))
+
+    page_size = 10
+    total = len(rows)
+    total_pages = max(1, ceil(total / page_size)) if total else 1
+    page = min(page, total_pages)
+    paged = rows[(page - 1) * page_size : page * page_size]
+
+    return {
+        "periods": paged,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "sort": sort,
+        "order": order,
+        "headers": sortable_headers(sort, order, PERIOD_SORT_FIELDS),
+    }
+
+
 @app.get("/app/entry")
 def entry():
-    # today = datetime.now().strftime("%Y-%m-%d")
-    # periods = get_periods()
-    # periods_with_weekly = get_periods_with_weekly()
-    # totals: TotalsDict = get_totals()
-    readings = get_readings()
+    ctx = get_display_params()
     return template(
         "templates/entry.html",
-        readings=readings,
         version=config.app_version,
         db_name=db_name,
+        **ctx,
     )
 
 
 @app.get("/app/entry/readings-table")
 def entry_readings_table():
     """Return the readings table partial for HTMX refresh."""
-    readings = get_readings()
-    return template("templates/table_readings.html", readings=readings)
+    ctx = get_display_params()
+    return template("templates/table_readings.html", **ctx)
 
 
 @app.post("/readings")

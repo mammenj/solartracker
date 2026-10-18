@@ -39,34 +39,50 @@ class MeterReadingStore:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
             conn.commit()
 
-    def load_by_page(self, last_id=None, page_size=5) -> list[MeterReading]:
+    # Whitelist of UI sort keys -> SQL columns (prevents SQL injection in ORDER BY)
+    SORT_COLUMNS = {
+        "date": "date",
+        "solar": "solar_gen",
+        "export": "export",
+        "import": "import",
+    }
+
+    def load_page(
+        self, sort_by: str = "date", order: str = "desc", page: int = 1, page_size: int = 10
+    ) -> tuple[list[MeterReading], int]:
         """
-        Load all meter readings from the database by paging, sorted by date.
+        Load one page of meter readings, sorted server-side.
+
+        Args:
+            sort_by: UI sort key (must be one of SORT_COLUMNS).
+            order: "asc" or "desc".
+            page: 1-based page number.
+            page_size: Number of rows per page.
 
         Returns:
-            List of MeterReading objects sorted by date.
+            Tuple of (readings on this page, total number of records).
         """
-        readings = []
+        sort_col = self.SORT_COLUMNS.get(sort_by, "date")
+        sort_dir = "DESC" if order == "desc" else "ASC"
+        page = max(1, int(page))
+        page_size = max(1, int(page_size))
+        offset = (page - 1) * page_size
+
         with closing(sqlite3.connect(self.db_filepath)) as conn:
-            cursor = conn.cursor()
-            if last_id is None:
-                cursor = conn.execute(
-                    "SELECT id, date, import, export, solar_gen FROM meter_records ORDER BY date ASC LIMIT ?",
-                    (page_size,),
-                )
-            else:
-                cursor = conn.execute(
-                    "SELECT id, date, import, export, solar_gen FROM meter_records WHERE id > ? ORDER BY date ASC LIMIT ?",
-                    (last_id, page_size),
-                )
-            for row in cursor.fetchall():
-                id, date_str, import_units, export_units, solar_units = row
-                print(" ID is --->", id)
-                date = datetime.strptime(date_str, "%Y-%m-%d")
-                readings.append(
-                    MeterReading(id, date, import_units, export_units, solar_units)
-                )
-        return readings
+            total = conn.execute("SELECT COUNT(*) FROM meter_records").fetchone()[0]
+            rows = conn.execute(
+                "SELECT id, date, import, export, solar_gen FROM meter_records "
+                "ORDER BY %s %s, date ASC LIMIT ? OFFSET ?" % (sort_col, sort_dir),
+                (page_size, offset),
+            ).fetchall()
+
+        readings = []
+        for id, date_str, import_units, export_units, solar_units in rows:
+            date = datetime.strptime(date_str, "%Y-%m-%d")
+            readings.append(
+                MeterReading(id, date, import_units, export_units, solar_units)
+            )
+        return readings, total
 
     def load_all(self) -> list[MeterReading]:
         """
