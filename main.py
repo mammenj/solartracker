@@ -368,6 +368,21 @@ def admin_users():
         ("created_at", "Created"),
     ])
 
+    # Check if htmx request (for partial loads via htmx)
+    if request.headers.get("HX-Request"):
+        return template(
+            "templates/admin_users.html",
+            users=users,
+            total=total,
+            page=page,
+            total_pages=total_pages,
+            sort=sort,
+            order=order,
+            headers=headers,
+            version=config.app_version,
+            db_name=db_name,
+        )
+
     return template(
         "templates/base.html",
         version=config.app_version,
@@ -381,6 +396,43 @@ def admin_users():
         sort=sort,
         order=order,
         headers=headers,
+    )
+
+
+@app.get("/admin/users/partial")
+@require_auth(["admin"])
+def admin_users_partial():
+    """Partial render for htmx tab navigation."""
+    from math import ceil
+    try:
+        page = max(1, int(request.params.get("page", "1")))
+    except (ValueError, TypeError):
+        page = 1
+    sort = request.params.get("sort", "username")
+    order = request.params.get("order", "asc")
+    users, total = list_users(page, 10, sort, order)
+    total_pages = max(1, ceil(total / 10)) if total else 1
+    page = min(page, total_pages)
+
+    headers = sortable_headers(sort, order, [
+        ("username", "Username"),
+        ("full_name", "Full Name"),
+        ("role", "Role"),
+        ("status", "Status"),
+        ("created_at", "Created"),
+    ])
+
+    return template(
+        "templates/admin_users.html",
+        users=users,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        sort=sort,
+        order=order,
+        headers=headers,
+        version=config.app_version,
+        db_name=db_name,
     )
 
 

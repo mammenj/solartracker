@@ -3,7 +3,7 @@
     <h2 class="text-xs sm:text-sm font-semibold text-slate-200">{{ 'Edit User' if user else 'Create User' }}</h2>
     <a
       href="/admin/users"
-      hx-get="/admin/users"
+      hx-get="/admin/users/partial"
       hx-target="#tab-content"
       hx-swap="innerHTML"
       hx-push-url="true"
