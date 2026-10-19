@@ -91,13 +91,19 @@
 
       <div class="text-[11px] sm:text-xs text-slate-400 font-mono flex items-center gap-1.5">
         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-        <span class="hidden sm:inline">System</span>{{db_name}}
         % if user:
+        % if user['role'] == 'admin':
+        <span class="hidden sm:inline">System</span>Admin Panel
+        % else:
+        <span class="hidden sm:inline">DB</span>{{user['db_file']}}
+        % end
         <span class="mx-1 text-slate-600">|</span>
         <span class="text-emerald-400">{{user['username']}} ({{user['role']}})</span>
         <form method="post" action="/logout" class="inline">
           <button type="submit" class="text-slate-400 hover:text-red-400 text-xs font-mono p-0 bg-none border-none cursor-pointer">Logout</button>
         </form>
+        % else:
+        <span class="hidden sm:inline">System</span>{{db_name}}
         % end
       </div>
     </header>
