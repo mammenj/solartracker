@@ -192,6 +192,9 @@ def get_chart_data(periods: list[ReadingPeriod] | None = None):
 @app.get("/")
 @require_auth()
 def index():
+    # Admin users should not see dashboard - redirect to admin panel
+    if request.user["role"] == "admin":
+        return redirect("/admin/users")
     periods = get_periods()
     totals: TotalsDict = get_totals(periods)
     return template(
@@ -219,6 +222,9 @@ def dashboard_periods_table():
 @app.get("/app/dashboard")
 @require_auth()
 def dashboard():
+    # Admin users should not see dashboard - redirect to admin panel
+    if request.user["role"] == "admin":
+        return redirect("/admin/users")
     # Full page render (like /) — includes base.html with CSS
     periods = get_periods()
     totals: TotalsDict = get_totals(periods)
@@ -612,6 +618,9 @@ def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
 @app.get("/app/entry")
 @require_auth()
 def entry():
+    # Admin users should not see entry - redirect to admin panel
+    if request.user["role"] == "admin":
+        return redirect("/admin/users")
     # Full page render — includes base.html with CSS
     ctx = get_display_params()
     # Also need totals/chartdata for base.html initial load

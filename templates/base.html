@@ -44,6 +44,18 @@
       <!-- Desktop Tab Navigation Bar -->
       <nav class="hidden md:flex h-full gap-1 items-center">
         % if user:
+        % if user['role'] == 'admin':
+        <button
+          hx-get="/admin/users"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          @click="activeTab = 'admin'"
+          :class="activeTab === 'admin' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
+          class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
+        >
+          Admin
+        </button>
+        % else:
         <button
           hx-get="/app/dashboard/partial"
           hx-target="#tab-content"
@@ -54,7 +66,6 @@
         >
           Dashboard Summary
         </button>
-        % if user['role'] == 'admin':
         <button
           hx-get="/app/entry/partial"
           hx-target="#tab-content"
@@ -64,16 +75,6 @@
           class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
         >
           Data Entry
-        </button>
-        <button
-          hx-get="/admin/users"
-          hx-target="#tab-content"
-          hx-swap="innerHTML"
-          @click="activeTab = 'admin'"
-          :class="activeTab === 'admin' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
-          class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
-        >
-          Admin
         </button>
         % end
         % else:
@@ -121,6 +122,19 @@
       class="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 border-t border-slate-800 flex justify-around p-1.5 z-50 backdrop-blur"
     >
       % if user:
+      % if user['role'] == 'admin':
+      <button
+        hx-get="/admin/users"
+        hx-target="#tab-content"
+        hx-swap="innerHTML"
+        @click="activeTab = 'admin'"
+        :class="activeTab === 'admin' ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+        class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
+      >
+        <span class="text-base mb-0.5">⚙️</span>
+        <span class="text-[10px] tracking-tight">Admin</span>
+      </button>
+      % else:
       <button
         hx-get="/app/dashboard/partial"
         hx-target="#tab-content"
@@ -132,7 +146,6 @@
         <span class="text-base mb-0.5">📊</span>
         <span class="text-[10px] tracking-tight">Dashboard</span>
       </button>
-      % if user['role'] == 'admin':
       <button
         hx-get="/app/entry/partial"
         hx-target="#tab-content"
@@ -143,17 +156,6 @@
       >
         <span class="text-base mb-0.5">📝</span>
         <span class="text-[10px] tracking-tight">Data Entry</span>
-      </button>
-      <button
-        hx-get="/admin/users"
-        hx-target="#tab-content"
-        hx-swap="innerHTML"
-        @click="activeTab = 'admin'"
-        :class="activeTab === 'admin' ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
-        class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
-      >
-        <span class="text-base mb-0.5">⚙️</span>
-        <span class="text-[10px] tracking-tight">Admin</span>
       </button>
       % end
       % else:
