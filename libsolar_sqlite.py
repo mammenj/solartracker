@@ -169,9 +169,9 @@ class MeterReadingStore:
             True if a reading was deleted, False if no reading existed for that date.
         """
         date_str = date.strftime("%Y-%m-%d")
-        with sqlite3.connect(self.db_filepath) as conn:
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
             cursor = conn.execute(
-                "DELETE FROM meter_readings WHERE date = ?", (date_str,)
+                "DELETE FROM meter_records WHERE date = ?", (date_str,)
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -187,25 +187,30 @@ class MeterReadingStore:
             MeterReading if found, None otherwise.
         """
         date_str = date.strftime("%Y-%m-%d")
-        with sqlite3.connect(self.db_filepath) as conn:
-            cursor = conn.execute(
-                "SELECT date, import_units, export_units, solar_units FROM meter_readings WHERE date = ?",
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+            row = conn.execute(
+                "SELECT id, date, import, export, solar_gen FROM meter_records WHERE date = ?",
                 (date_str,),
-            )
-            row = cursor.fetchone()
-            if row:
-                date_obj, import_units, export_units, solar_units = row
-                return MeterReading(date_obj, import_units, export_units, solar_units)
-        return None
+            ).fetchone()
+        if not row:
+            return None
+        id, date_value, import_units, export_units, solar_units = row
+        return MeterReading(
+            id,
+            datetime.strptime(date_value, "%Y-%m-%d"),
+            import_units,
+            export_units,
+            solar_units,
+        )
 
     def count(self) -> int:
         """Get the total number of readings in the database."""
-        with sqlite3.connect(self.db_filepath) as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM meter_readings")
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM meter_records")
             return cursor.fetchone()[0]
 
     def clear_all(self) -> None:
         """Delete all readings from the database."""
-        with sqlite3.connect(self.db_filepath) as conn:
-            conn.execute("DELETE FROM meter_readings")
+        with closing(sqlite3.connect(self.db_filepath)) as conn:
+            conn.execute("DELETE FROM meter_records")
             conn.commit()

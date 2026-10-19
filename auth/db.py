@@ -225,8 +225,13 @@ def provision_user_db(db_path: Path) -> None:
 
 
 def ensure_user_db(db_file: str) -> Path:
-    """Return resolved Path for a user's DB, creating if needed."""
-    p = Path(db_file)
+    """Return resolved Path for a user's DB, creating if needed.
+
+    Users without an explicit database file (administrators do not log
+    readings) fall back to the application's default database.
+    """
+    db_file = (db_file or "").strip()
+    p = Path(db_file) if db_file else Path(config.db_file)
     if not p.is_absolute():
         p = DATA_DIR / p
     provision_user_db(p)

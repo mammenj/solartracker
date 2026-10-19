@@ -51,12 +51,17 @@ def setup_post():
         return template("templates/setup.html", errors=errors, version=config.app_version)
 
     try:
-        user_id = create_user(username, password, full_name, "admin", "", "approved")
-        token = create_session(user_id)
-        response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
-        return redirect("/app/dashboard")
+        user_id = create_user(
+            username, password, full_name, "admin", config.db_file.name, "approved"
+        )
     except Exception as e:
         return template("templates/setup.html", errors=[str(e)], version=config.app_version)
+
+    # NOTE: redirect() raises Bottle's HTTPResponse, so it must stay outside the
+    # try/except above or the redirect would be swallowed and the form re-rendered.
+    token = create_session(user_id)
+    response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
+    return redirect("/app/dashboard")
 
 
 def login_page():
