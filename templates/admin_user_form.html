@@ -13,7 +13,7 @@
     </a>
   </div>
 
-  <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 flex-1 max-w-md">
+  <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 flex-1 max-w-md" x-data="{ role: '{{ user['role'] if user else 'admin' }}' }">
     % if errors:
     <div class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-300 text-sm space-y-1">
       % for e in errors:
@@ -68,9 +68,9 @@
 
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Role</label>
-        <select name="role" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
-          <option value="user" {{ 'selected' if (user and user['role'] == 'user') or not user else '' }}>User (Read-only)</option>
-          <option value="admin" {{ 'selected' if user and user['role'] == 'admin' else '' }}>Admin (Read/Write)</option>
+        <select name="role" x-model="role" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+          <option value="user" {{ 'selected' if (user and user['role'] == 'user') else '' }}>User (Read-only)</option>
+          <option value="admin" {{ 'selected' if (user and user['role'] == 'admin') or not user else '' }}>Admin (Read/Write)</option>
         </select>
       </div>
 
@@ -84,7 +84,7 @@
         <p class="text-[10px] text-slate-500 mt-1">Only approved users can log in</p>
       </div>
 
-      <div>
+      <div x-show="role === 'user'" x-transition>
         <label class="block text-xs font-medium text-slate-400 mb-1">Database File</label>
         <input
           type="text"

@@ -280,7 +280,6 @@ def setup_post():
     username = request.forms.get("username", "").strip()
     password = request.forms.get("password", "")
     full_name = request.forms.get("full_name", "").strip()
-    db_file = request.forms.get("db_file", "meter_logs.db").strip()
 
     errors = []
     if not username:
@@ -293,16 +292,12 @@ def setup_post():
         errors.append("Password must be at least 8 characters")
     if not full_name:
         errors.append("Full name required")
-    if not db_file:
-        errors.append("Database file required")
 
     if errors:
         return template("templates/setup.html", errors=errors, version=config.app_version)
 
     try:
-        user_id = create_user(username, password, full_name, "admin", db_file, "approved")
-        # Ensure the DB exists
-        ensure_user_db(db_file)
+        user_id = create_user(username, password, full_name, "admin", "", "approved")
         token = create_session(user_id)
         response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
         return redirect("/app/dashboard")
@@ -414,14 +409,14 @@ def admin_user_create():
         errors.append("Invalid role")
     if status not in ("pending", "approved", "disabled"):
         errors.append("Invalid status")
-    if not db_file:
+    if role == "user" and not db_file:
         errors.append("Database file required")
 
     if errors:
         return template("templates/admin_user_form.html", user=None, errors=errors, version=config.app_version, db_name=db_name)
 
     try:
-        create_user(username, password, full_name, role, db_file, status)
+        create_user(username, password, full_name, role, db_file or "", status)
     except Exception as e:
         return template("templates/admin_user_form.html", user=None, errors=[str(e)], version=config.app_version, db_name=db_name)
 
@@ -456,13 +451,17 @@ def admin_user_update(user_id: int):
         errors.append("Invalid role")
     if status not in ("pending", "approved", "disabled"):
         errors.append("Invalid status")
-    if not db_file:
+    if role == "user" and not db_file:
         errors.append("Database file required")
 
     if errors:
         return template("templates/admin_user_form.html", user=user, errors=errors, version=config.app_version, db_name=db_name)
 
-    update_user(user_id, full_name=full_name, role=role, status=status, db_file=db_file)
+    # Only pass db_file for user role
+    update_kwargs = {"full_name": full_name, "role": role, "status": status}
+    if role == "user":
+        update_kwargs["db_file"] = db_file
+    update_user(user_id, **update_kwargs)
     return redirect("/admin/users")
 
 
@@ -611,7 +610,7 @@ def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
 
 
 @app.get("/app/entry")
-@require_auth(["admin"])
+@require_auth()
 def entry():
     # Full page render — includes base.html with CSS
     ctx = get_display_params()
@@ -631,7 +630,7 @@ def entry():
 
 
 @app.get("/app/entry/partial")
-@require_auth(["admin"])
+@require_auth()
 def entry_partial():
     """Partial render for htmx tab navigation."""
     ctx = get_display_params()
@@ -645,7 +644,7 @@ def entry_partial():
 
 
 @app.get("/app/entry/readings-table")
-@require_auth(["admin"])
+@require_auth()
 def entry_readings_table():
     """Return the readings table partial for HTMX refresh."""
     ctx = get_display_params()
@@ -653,7 +652,7 @@ def entry_readings_table():
 
 
 @app.post("/readings")
-@require_auth(["admin"])
+@require_auth()
 def add_reading():
     try:
         date_str = request.forms.get("date")
