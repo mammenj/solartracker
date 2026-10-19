@@ -1,8 +1,8 @@
 """Admin services for user management and utilities."""
 
 from math import ceil
-from bottle import request
-from auth.db import list_users, get_user_by_id, update_user, delete_user, create_user
+from bottle import request, template, redirect, response
+from auth.db import list_users, get_user_by_id, update_user, delete_user, create_user, get_user
 from auth import require_auth
 
 

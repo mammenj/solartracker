@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from bottle import request, redirect, template
 from auth import require_auth
+from auth.deps import get_user_store
 from entry.services import (
     get_display_params,
     validate_reading,
