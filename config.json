@@ -3,7 +3,7 @@
   "port": 3000,
   "server": "waitress",
   "db": "meter_logs.db",
-  "version": "v3.0.0-saas",
+  "version": "3.0.0-saas",
   "auth_db": "auth.db",
   "data_dir": "data",
   "auth_secret": "change-me-in-production-use-env"
