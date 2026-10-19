@@ -63,6 +63,9 @@
               >
                 Edit
               </a>
+              <form method="post" action="/admin/users/{{u['id']}}/delete" class="inline ml-2" hx-confirm="Delete user '{{u['username']}}'? This cannot be undone." hx-target="#admin-users-table" hx-swap="outerHTML" hx-push-url="true">
+                <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-medium">Delete</button>
+              </form>
             </td>
           </tr>
           % end
@@ -94,16 +97,21 @@
           </span>
           <span class="text-slate-500 font-mono">{{u['created_at'][:10]}}</span>
         </div>
-        <a
-          href="/admin/users/{{u['id']}}/edit"
-          hx-get="/admin/users/{{u['id']}}/edit"
-          hx-target="#tab-content"
-          hx-swap="innerHTML"
-          hx-push-url="true"
-          class="text-emerald-400 hover:text-emerald-300 text-xs font-medium"
-        >
-          Edit
-        </a>
+        <div class="flex items-center gap-2">
+          <a
+            href="/admin/users/{{u['id']}}/edit"
+            hx-get="/admin/users/{{u['id']}}/edit"
+            hx-target="#tab-content"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            class="text-emerald-400 hover:text-emerald-300 text-xs font-medium"
+          >
+            Edit
+          </a>
+          <form method="post" action="/admin/users/{{u['id']}}/delete" class="inline" hx-confirm="Delete user '{{u['username']}}'? This cannot be undone." hx-target="#admin-users-mobile" hx-swap="outerHTML" hx-push-url="true">
+            <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-medium">Delete</button>
+          </form>
+        </div>
       </div>
       % end
       % if not users:

@@ -20,6 +20,7 @@ from auth import (
     verify_session,
     list_users,
     update_user,
+    delete_user,
     count_users,
     ensure_user_db,
 )
@@ -520,6 +521,18 @@ def admin_user_update(user_id: int):
     if role == "user":
         update_kwargs["db_file"] = db_file
     update_user(user_id, **update_kwargs)
+    return redirect("/admin/users")
+
+
+@app.post("/admin/users/<user_id:int>/delete")
+@require_auth(["admin"])
+def admin_user_delete(user_id: int):
+    """Delete a user. Prevents deleting self."""
+    current_user_id = request.user["id"]
+    if user_id == current_user_id:
+        response.status = 400
+        return "Cannot delete yourself"
+    delete_user(user_id)
     return redirect("/admin/users")
 
 
