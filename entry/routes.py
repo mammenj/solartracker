@@ -1,6 +1,5 @@
 """Entry routes: /app/entry, /app/entry/partial, /app/entry/readings-table, /readings"""
 
-import json
 from datetime import datetime
 from bottle import request, redirect, template
 from auth import require_auth
@@ -21,8 +20,8 @@ def entry():
         return redirect("/admin/users")
     # Full page render — includes base.html with CSS
     ctx = get_display_params()
-    # Also need totals/chartdata for base.html initial load
-    from dashboard.services import get_periods, get_totals, get_chart_data
+    # Also need totals for base.html initial load
+    from dashboard.services import get_periods, get_totals
     periods = get_periods()
     totals = get_totals(periods)
     return template(
@@ -32,7 +31,6 @@ def entry():
         user=request.user,
         initial_tab="entry",
         totals=totals,
-        chartdata=json.dumps(get_chart_data(periods)),
         **ctx,
     )
 

@@ -165,13 +165,24 @@ def _add_reading(client, date, import_units, export_units, solar_units):
     )
 
 
-def test_dashboard_chart_data_includes_phase1_fields(client, login, user):
+def test_dashboard_page_lazy_loads_chart_partial(client, login, user):
+    login(user)
+    resp = client.get("/app/dashboard")
+    assert resp.status == 200
+    # Chart is fetched on demand, not rendered inline.
+    assert 'id="dashboard-chart"' in resp.text
+    assert 'hx-get="/app/dashboard/chart"' in resp.text
+    assert "Energy Charts" not in resp.text
+
+
+def test_dashboard_chart_partial_includes_phase1_fields(client, login, user):
     login(user)
     _add_reading(client, "2026-01-01", 0, 0, 0)
     _add_reading(client, "2026-01-08", 70, 35, 140)
 
-    resp = client.get("/")
+    resp = client.get("/app/dashboard/chart")
     assert resp.status == 200
+    assert "energyChartComponent" in resp.text
     for field in (
         "net_balance",
         "consumption",

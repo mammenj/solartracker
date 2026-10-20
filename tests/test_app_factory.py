@@ -14,6 +14,7 @@ EXPECTED_ROUTES = {
     ("GET", "/app/dashboard"),
     ("GET", "/app/dashboard/partial"),
     ("GET", "/app/dashboard/periods-table"),
+    ("GET", "/app/dashboard/chart"),
     ("GET", "/app/entry"),
     ("GET", "/app/entry/partial"),
     ("GET", "/app/entry/readings-table"),
@@ -49,6 +50,8 @@ def test_protected_routes_require_authentication(client):
     protected = [
         ("GET", "/"),
         ("GET", "/app/dashboard"),
+        ("GET", "/app/dashboard/partial"),
+        ("GET", "/app/dashboard/chart"),
         ("GET", "/app/entry"),
         ("GET", "/app/entry/readings-table"),
         ("GET", "/admin/users"),

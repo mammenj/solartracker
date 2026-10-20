@@ -1,0 +1,45 @@
+<!-- Energy chart card: rendered as a partial (see /app/dashboard/chart) -->
+<div
+  id="dashboard-chart"
+  x-data="energyChartComponent({{chartdata}})"
+  class="bg-slate-900 border border-slate-800 rounded-lg p-4 shadow-lg shrink-0"
+>
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+    <h2 class="text-xs sm:text-sm font-semibold text-slate-200">
+      Energy Charts
+    </h2>
+
+    <div class="flex items-center gap-2">
+      <span class="text-[10px] text-slate-400 font-mono">View Recent:</span>
+      <select
+        x-model="limit"
+        @change="renderChart()"
+        class="bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-0.5 text-xs font-mono focus:outline-none"
+      >
+        <option value="6">6 Periods</option>
+        <option value="12" selected>12 Periods</option>
+        <option value="24">24 Periods</option>
+        <option value="0">All Data</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Chart view tabs -->
+  <div class="flex flex-wrap gap-1 mb-3 border-b border-slate-800">
+    <template x-for="tab in tabs" :key="tab.id">
+      <button
+        type="button"
+        @click="view = tab.id; renderChart()"
+        :class="view === tab.id
+          ? 'bg-slate-800 text-slate-100 border-b-2 border-emerald-400'
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'"
+        class="px-3 py-1.5 text-xs font-medium transition-colors"
+        x-text="tab.label"
+      ></button>
+    </template>
+  </div>
+
+  <div class="w-full h-56 sm:h-64 relative">
+    <canvas x-ref="chartCanvas"></canvas>
+  </div>
+</div>

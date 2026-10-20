@@ -1,4 +1,4 @@
-"""Dashboard routes: /, /app/dashboard, /app/dashboard/partial, /app/dashboard/periods-table"""
+"""Dashboard routes: /, /app/dashboard, /app/dashboard/partial, /app/dashboard/periods-table, /app/dashboard/chart"""
 
 import json
 from bottle import request, redirect, template
@@ -23,7 +23,6 @@ def index():
     return template(
         "templates/base.html",
         totals=totals,
-        chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=config.db_file.name,
         user=request.user,
@@ -42,7 +41,6 @@ def dashboard():
     return template(
         "templates/base.html",
         totals=totals,
-        chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=config.db_file.name,
         user=request.user,
@@ -58,7 +56,6 @@ def dashboard_partial():
     return template(
         "templates/dashboard.html",
         totals=totals,
-        chartdata=json.dumps(get_chart_data(periods)),
         version=config.app_version,
         db_name=config.db_file.name,
         user=request.user,
@@ -74,6 +71,14 @@ def dashboard_periods_table():
     )
 
 
+def dashboard_chart():
+    """Return the energy chart partial (lazy-loaded via HTMX)."""
+    return template(
+        "templates/chart.html",
+        chartdata=json.dumps(get_chart_data(get_periods())),
+    )
+
+
 def register_routes(app):
     """Register all dashboard routes with the Bottle app."""
     from auth import require_auth
@@ -81,3 +86,4 @@ def register_routes(app):
     app.get("/app/dashboard")(require_auth()(dashboard))
     app.get("/app/dashboard/partial")(require_auth()(dashboard_partial))
     app.get("/app/dashboard/periods-table")(require_auth()(dashboard_periods_table))
+    app.get("/app/dashboard/chart")(require_auth()(dashboard_chart))
