@@ -22,7 +22,7 @@ class MeterReadingStore:
 
     def _init_schema(self) -> None:
         """Create the readings table if it doesn't exist."""
-        print("db is----->> ", self.db_filepath)
+        print("db is >> ", Path(self.db_filepath).name)
         with closing(sqlite3.connect(self.db_filepath)) as conn:
             conn.execute(
                 """
@@ -48,7 +48,11 @@ class MeterReadingStore:
     }
 
     def load_page(
-        self, sort_by: str = "date", order: str = "desc", page: int = 1, page_size: int = 10
+        self,
+        sort_by: str = "date",
+        order: str = "desc",
+        page: int = 1,
+        page_size: int = 10,
     ) -> tuple[list[MeterReading], int]:
         """
         Load one page of meter readings, sorted server-side.
