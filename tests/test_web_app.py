@@ -153,9 +153,6 @@ def test_each_user_gets_their_own_database_file(user, test_config):
     assert path.exists()
 
 
-# ---------------------------------------------------------------------------
-# helpers
-# ---------------------------------------------------------------------------
 def _add_reading(client, date, import_units, export_units, solar_units):
     return client.post(
         "/readings",
@@ -166,3 +163,20 @@ def _add_reading(client, date, import_units, export_units, solar_units):
             "solar_units": str(solar_units),
         },
     )
+
+
+def test_dashboard_chart_data_includes_phase1_fields(client, login, user):
+    login(user)
+    _add_reading(client, "2026-01-01", 0, 0, 0)
+    _add_reading(client, "2026-01-08", 70, 35, 140)
+
+    resp = client.get("/")
+    assert resp.status == 200
+    for field in (
+        "net_balance",
+        "consumption",
+        "solar_per_day",
+        "self_consumed",
+        "grid_dependency_pct",
+    ):
+        assert field in resp.text, field

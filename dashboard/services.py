@@ -58,20 +58,35 @@ def get_chart_data(periods: list[ReadingPeriod] | None = None):
         consumption = p.consumption
         export = p.export_diff
         import_diff = p.import_diff
+        days = p.days
         self_sufficiency = (
             ((consumption - import_diff) / consumption * 100)
             if consumption > 0
             else 0.0
         )
         self_consumption = ((solar - export) / solar * 100) if solar > 0 else 0.0
+        grid_dependency = (import_diff / consumption * 100) if consumption > 0 else 0.0
+        export_ratio = (export / solar * 100) if solar > 0 else 0.0
         points.append(
             {
+                # Existing fields (kept for backward compatibility)
                 "label": p.start.date.strftime("%d/%m/%Y"),
                 "solar_gen": round(solar, 2),
                 "export": round(export, 2),
                 "import": round(import_diff, 2),
                 "self_sufficiency_pct": round(self_sufficiency, 1),
                 "self_consumption_pct": round(self_consumption, 1),
+                # Phase 1 derived fields
+                "net_balance": round(p.net_balance, 2),
+                "consumption": round(consumption, 2),
+                "days": days,
+                "solar_per_day": round(solar / days, 2) if days > 0 else 0.0,
+                "import_per_day": round(import_diff / days, 2) if days > 0 else 0.0,
+                "export_per_day": round(export / days, 2) if days > 0 else 0.0,
+                "consumption_per_day": round(consumption / days, 2) if days > 0 else 0.0,
+                "self_consumed": round(solar - export, 2),
+                "grid_dependency_pct": round(grid_dependency, 1),
+                "export_ratio_pct": round(export_ratio, 1),
             }
         )
     return points
