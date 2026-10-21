@@ -6,7 +6,6 @@
       hx-get="/admin/roles/partial"
       hx-target="#tab-content"
       hx-swap="innerHTML"
-      hx-push-url="true"
       class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded transition-colors"
     >
       ← Back
@@ -22,7 +21,14 @@
     </div>
     % end
 
-    <form method="post" action="{{ '/admin/roles/' + role if role else '/admin/roles' }}" class="space-y-4">
+    <form
+      method="post"
+      action="{{ '/admin/roles/' + role if role else '/admin/roles' }}"
+      hx-post="{{ '/admin/roles/' + role if role else '/admin/roles' }}"
+      hx-target:inherited="#tab-content"
+      hx-swap:inherited="innerHTML"
+      class="space-y-4"
+    >
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Role Name</label>
         <input
@@ -86,7 +92,6 @@
           hx-get="/admin/roles/partial"
           hx-target="#tab-content"
           hx-swap="innerHTML"
-          hx-push-url="true"
           class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded text-sm text-center transition-colors"
         >
           Cancel

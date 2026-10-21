@@ -9,7 +9,6 @@
       hx-get="/admin/roles/new"
       hx-target="#tab-content"
       hx-swap="innerHTML"
-      hx-push-url="true"
       class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold text-xs rounded transition-colors"
     >
       + Add Role
@@ -57,7 +56,6 @@
                   hx-get="/admin/roles/{{r['name']}}/edit"
                   hx-target="#tab-content"
                   hx-swap="innerHTML"
-                  hx-push-url="true"
                   class="text-emerald-400 hover:text-emerald-300 font-medium"
                 >
                   Edit
@@ -67,7 +65,10 @@
                   method="post"
                   action="/admin/roles/{{r['name']}}/delete"
                   class="inline"
-                  onsubmit="return confirm('Delete role {{r['name']}}?');"
+                  hx-post="/admin/roles/{{r['name']}}/delete"
+                  hx-confirm="Delete role '{{r['name']}}'? This cannot be undone."
+                  hx-target="#tab-content"
+                  hx-swap="innerHTML"
                 >
                   <button type="submit" class="text-red-400 hover:text-red-300 font-medium">Delete</button>
                 </form>

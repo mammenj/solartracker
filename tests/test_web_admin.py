@@ -239,6 +239,94 @@ def test_admin_can_delete_another_user(client, login, admin, user):
 
 
 # ---------------------------------------------------------------------------
+# htmx driven user management
+# ---------------------------------------------------------------------------
+def test_delete_user_via_htmx_returns_refreshed_panel(client, login, admin, user):
+    login(admin)
+    resp = client.post(
+        f"/admin/users/{user['id']}/delete", headers={"HX-Request": "true"}
+    )
+    assert resp.status == 200
+    assert "User Management" in resp.text
+    assert user["username"] not in resp.text
+    assert get_user_by_id(user["id"]) is None
+
+
+def test_delete_user_form_is_htmx_driven(client, login, admin, user):
+    login(admin)
+    resp = client.get("/admin/users")
+    assert f'hx-post="/admin/users/{user["id"]}/delete"' in resp.text
+    assert 'hx-confirm="Delete user' in resp.text
+
+
+def test_current_user_row_has_no_delete_button(client, login, admin):
+    login(admin)
+    resp = client.get("/admin/users")
+    assert f'hx-post="/admin/users/{admin["id"]}/delete"' not in resp.text
+
+
+def test_user_list_sorting_and_paging_refresh_the_panel(client, login, admin):
+    login(admin)
+    resp = client.get("/admin/users")
+    # The sort headers / pagination swap the whole panel into the tab content.
+    assert 'hx-target="#tab-content"' in resp.text
+    assert 'hx-target="#admin-users-table"' not in resp.text
+    assert 'hx-swap="outerHTML"' not in resp.text
+
+
+def test_create_user_via_htmx_returns_the_panel(client, login, admin):
+    login(admin)
+    resp = client.post(
+        "/admin/users",
+        {
+            "username": "htmxuser",
+            "password": "password123",
+            "full_name": "Htmx User",
+            "role": "user",
+            "status": "approved",
+            "db_file": "htmxuser.db",
+        },
+        headers={"HX-Request": "true"},
+    )
+    assert resp.status == 200
+    assert "User Management" in resp.text
+    assert "htmxuser" in resp.text
+    assert get_user("htmxuser") is not None
+
+
+def test_create_user_via_htmx_reports_validation_errors(client, login, admin):
+    login(admin)
+    resp = client.post(
+        "/admin/users",
+        {
+            "username": "htmxuser",
+            "password": "password123",
+            "full_name": "Htmx User",
+            "role": "user",
+            "status": "approved",
+            "db_file": "",
+        },
+        headers={"HX-Request": "true"},
+    )
+    assert resp.status == 200
+    assert "Database file required" in resp.text
+    assert "Create User" in resp.text
+    assert get_user("htmxuser") is None
+
+
+def test_update_user_via_htmx_returns_the_panel(client, login, admin, user):
+    login(admin)
+    resp = client.post(
+        f"/admin/users/{user['id']}",
+        {"full_name": "Renamed", "role": "user", "status": "approved", "db_file": "user1.db"},
+        headers={"HX-Request": "true"},
+    )
+    assert resp.status == 200
+    assert "User Management" in resp.text
+    assert get_user_by_id(user["id"])["full_name"] == "Renamed"
+
+
+# ---------------------------------------------------------------------------
 # Listing / partials
 # ---------------------------------------------------------------------------
 def test_admin_users_paging_and_sorting(client, login, admin):

@@ -91,6 +91,18 @@ def get_admin_users_params():
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
+def _users_panel(current_user_id: int):
+    """Render the users panel (htmx partial / post-action refresh)."""
+    params = get_admin_users_params()
+    params["current_user_id"] = current_user_id
+    return template(
+        "templates/admin_users.html",
+        **params,
+        version=config.app_version,
+        db_name=config.db_file.name,
+    )
+
+
 def _role_options() -> list[dict]:
     """Roles for the user form, annotated with whether they need a database."""
     policy = get_policy()
@@ -173,6 +185,9 @@ def admin_user_create():
             "templates/admin_user_form.html", **_user_form_context(None, [str(e)])
         )
 
+    if request.headers.get("HX-Request"):
+        return _users_panel(request.user["id"])
+
     return redirect("/admin/users")
 
 
@@ -223,18 +238,29 @@ def admin_user_update(user_id: int):
     if policy.role_needs_db(role):
         update_kwargs["db_file"] = db_file
     update_user(user_id, **update_kwargs)
+
+    if request.headers.get("HX-Request"):
+        return _users_panel(request.user["id"])
+
     return redirect("/admin/users")
 
 
 def admin_user_delete(user_id: int):
-    """Delete a user. Prevents deleting self."""
+    """Delete a user. Prevents deleting self.
+
+    htmx requests get the refreshed users panel back; plain form posts are
+    redirected to the user list.
+    """
     current_user_id = request.user["id"]
     if user_id == current_user_id:
         response.status = 400
         return "Cannot delete yourself"
     delete_user(user_id)
-    return redirect("/admin/users")
 
+    if request.headers.get("HX-Request"):
+        return _users_panel(current_user_id)
+
+    return redirect("/admin/users")
 
 # ---------------------------------------------------------------------------
 # Roles & permissions
@@ -264,6 +290,13 @@ def _roles_context() -> dict:
     return {"roles": roles}
 
 
+def _roles_panel():
+    """Render the roles panel (htmx partial / post-action refresh)."""
+    ctx = _roles_context()
+    ctx.update(version=config.app_version, db_name=config.db_file.name)
+    return template("templates/admin_roles.html", **ctx)
+
+
 def admin_roles():
     ctx = _roles_context()
     ctx.update(version=config.app_version, db_name=config.db_file.name)
@@ -281,8 +314,7 @@ def admin_roles():
 
 def admin_roles_partial():
     """Partial render for htmx tab navigation."""
-    ctx = _roles_context()
-    return template("templates/admin_roles.html", **ctx)
+    return _roles_panel()
 
 
 def _role_permissions_from_form() -> list[tuple[str, str]]:
@@ -374,6 +406,10 @@ def admin_role_create():
                 role_name=role, home=home, selected=selected, errors=[str(e)]
             ),
         )
+
+    if request.headers.get("HX-Request"):
+        return _roles_panel()
+
     return redirect("/admin/roles")
 
 
@@ -430,10 +466,19 @@ def admin_role_update(role: str):
                 role=role, home=home, selected=selected, errors=[str(e)]
             ),
         )
+
+    if request.headers.get("HX-Request"):
+        return _roles_panel()
+
     return redirect("/admin/roles")
 
 
 def admin_role_delete(role: str):
+    """Delete a role.
+
+    htmx requests get the refreshed roles panel back; plain form posts are
+    redirected to the role list.
+    """
     if role == request.user["role"]:
         response.status = 400
         return "Cannot delete the role you are currently using"
@@ -441,4 +486,8 @@ def admin_role_delete(role: str):
         response.status = 400
         return "Cannot delete a role that still has users"
     get_policy().delete_role(role)
+
+    if request.headers.get("HX-Request"):
+        return _roles_panel()
+
     return redirect("/admin/roles")

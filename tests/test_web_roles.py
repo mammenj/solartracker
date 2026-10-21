@@ -30,6 +30,15 @@ def test_normal_user_is_redirected_from_roles(client, login, user):
     assert resp.location == "/app/dashboard"
 
 
+def test_htmx_request_gets_a_redirect_header_instead_of_a_body(client, login, user):
+    """htmx must navigate, not paste a full page into the tab area."""
+    login(user)
+    resp = client.get("/admin/roles", headers={"HX-Request": "true"})
+    assert resp.status == 200
+    assert resp.header("HX-Redirect") == "/app/dashboard"
+    assert resp.text == ""
+
+
 def test_roles_nav_visibility(client, login, admin, user, new_client):
     login(admin)
     assert "/admin/roles" in client.get("/admin/users").text
@@ -87,6 +96,74 @@ def test_admin_can_delete_an_unused_role(client, login, admin):
     resp = client.post("/admin/roles/temp/delete")
     assert resp.status == 303
     assert "temp" not in get_policy().roles()
+
+
+def test_delete_role_via_htmx_returns_refreshed_panel(client, login, admin):
+    login(admin)
+    client.post(
+        "/admin/roles",
+        _role_form("temp", "/app/dashboard", ["dashboard:view"]),
+    )
+
+    resp = client.post("/admin/roles/temp/delete", headers={"HX-Request": "true"})
+    assert resp.status == 200
+    assert "Roles &amp; Permissions" in resp.text
+    assert "temp" not in get_policy().roles()
+
+
+def test_role_delete_form_is_htmx_driven(client, login, admin):
+    login(admin)
+    client.post(
+        "/admin/roles",
+        _role_form("temp", "/app/dashboard", ["dashboard:view"]),
+    )
+
+    resp = client.get("/admin/roles")
+    assert 'hx-post="/admin/roles/temp/delete"' in resp.text
+    assert 'hx-confirm="Delete role' in resp.text
+
+
+def test_create_role_via_htmx_returns_the_panel(client, login, admin):
+    login(admin)
+    resp = client.post(
+        "/admin/roles",
+        _role_form("viewer", "/app/dashboard", ["dashboard:view"]),
+        headers={"HX-Request": "true"},
+    )
+    assert resp.status == 200
+    assert "Roles &amp; Permissions" in resp.text
+    assert "viewer" in resp.text
+    assert "viewer" in get_policy().roles()
+
+
+def test_update_role_via_htmx_returns_the_panel(client, login, admin):
+    login(admin)
+    client.post(
+        "/admin/roles",
+        _role_form("viewer", "/app/dashboard", ["dashboard:view"]),
+    )
+
+    resp = client.post(
+        "/admin/roles/viewer",
+        [("home", "/app/entry"), ("permissions", "entry:view")],
+        headers={"HX-Request": "true"},
+    )
+    assert resp.status == 200
+    assert "Roles &amp; Permissions" in resp.text
+    assert get_policy().can({"role": "viewer"}, "entry", "view") is True
+
+
+def test_create_role_via_htmx_reports_validation_errors(client, login, admin):
+    login(admin)
+    resp = client.post(
+        "/admin/roles",
+        _role_form("viewer", "/admin/users", ["dashboard:view"]),
+        headers={"HX-Request": "true"},
+    )
+    assert resp.status == 200
+    assert "requires the" in resp.text
+    assert "Create Role" in resp.text
+    assert "viewer" not in get_policy().roles()
 
 
 def test_admin_cannot_delete_a_role_with_users(client, login, admin, make_user):

@@ -61,6 +61,19 @@ def get_user_store() -> "MeterReadingStore":
     return request.store
 
 
+def _redirect(target: str):
+    """Redirect that also behaves for htmx requests.
+
+    htmx follows 3xx responses itself and swaps the final body into the
+    target, which would paste a whole page into the tab area.  ``HX-Redirect``
+    tells htmx to perform a real browser navigation instead.
+    """
+    if request.headers.get("HX-Request"):
+        response.set_header("HX-Redirect", target)
+        return ""
+    return redirect(target)
+
+
 def requires(resource: str, action: str):
     """Decorator: require an approved session with ``resource``/``action`` rights.
 
@@ -77,7 +90,7 @@ def requires(resource: str, action: str):
         def wrapper(*a, **kw):
             user, login_redirect = _authenticate()
             if login_redirect is not None:
-                return redirect(login_redirect)
+                return _redirect(login_redirect)
             if not can(user, resource, action):
                 target = home_for(user)
                 # If the role's own landing page is forbidden (or the role has
@@ -85,8 +98,8 @@ def requires(resource: str, action: str):
                 # the session and explain instead.
                 if target == DEFAULT_HOME or target == request.path:
                     response.delete_cookie("session")
-                    return redirect("/login?error=no_access")
-                return redirect(target)
+                    return _redirect("/login?error=no_access")
+                return _redirect(target)
             return callback(*a, **kw)
 
         return wrapper

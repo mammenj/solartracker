@@ -15,6 +15,10 @@ p, admin, admin_users, create
 p, admin, admin_users, delete
 p, admin, admin_users, update
 p, admin, admin_users, view
+p, tester, dashboard, chart
+p, tester, dashboard, view
+p, tester, entry, view
+p, tester, entry, write
 p, user, dashboard, chart
 p, user, dashboard, view
 p, user, entry, view
@@ -22,4 +26,5 @@ p, user, entry, write
 
 # Landing pages
 p2, admin, /admin/users
+p2, tester, /app/dashboard
 p2, user, /app/dashboard

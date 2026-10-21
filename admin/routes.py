@@ -25,6 +25,7 @@ config = load_config()
 
 def admin_users():
     params = get_admin_users_params()
+    params["current_user_id"] = request.user["id"]
 
     # Check if htmx request (for partial loads via htmx)
     if request.headers.get("HX-Request"):
@@ -48,6 +49,7 @@ def admin_users():
 def admin_users_partial():
     """Partial render for htmx tab navigation."""
     params = get_admin_users_params()
+    params["current_user_id"] = request.user["id"]
     return template(
         "templates/admin_users.html",
         **params,

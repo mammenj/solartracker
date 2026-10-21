@@ -6,7 +6,6 @@
       hx-get="/admin/users/partial"
       hx-target="#tab-content"
       hx-swap="innerHTML"
-      hx-push-url="true"
       class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded transition-colors"
     >
       ← Back
@@ -22,7 +21,14 @@
     </div>
     % end
 
-    <form method="post" action="{{ '/admin/users' if not user else '/admin/users/' + str(user['id']) }}" class="space-y-4">
+    <form
+      method="post"
+      action="{{ '/admin/users' if not user else '/admin/users/' + str(user['id']) }}"
+      hx-post="{{ '/admin/users' if not user else '/admin/users/' + str(user['id']) }}"
+      hx-target:inherited="#tab-content"
+      hx-swap:inherited="innerHTML"
+      class="space-y-4"
+    >
       <input type="hidden" name="_method" value="{{ 'PUT' if user else 'POST' }}">
 
       <div>
@@ -110,7 +116,6 @@
           hx-get="/admin/users"
           hx-target="#tab-content"
           hx-swap="innerHTML"
-          hx-push-url="true"
           class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded text-sm text-center transition-colors"
         >
           Cancel

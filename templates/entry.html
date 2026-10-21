@@ -16,7 +16,7 @@
         hx-post="/readings"
         hx-target="#feedback"
         hx-swap="innerHTML"
-        hx-on::after-request="if(event.detail.successful) { htmx.trigger('#readings-table-content', 'readingAdded') }"
+        hx-on::after:request="if (ctx.response.status < 400) { htmx.trigger('#readings-table-content', 'readingAdded') }"
         class="space-y-4"
       >
         <div>

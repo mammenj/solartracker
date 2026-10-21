@@ -7,8 +7,20 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Solar Monitor Dashboard</title>
+    <!--
+      htmx 4 configuration:
+        noSwap         - keep 1.x/2.x behaviour: error responses are not swapped
+        history        - "reload" makes browser back/forward a normal page load
+                        instead of htmx re-fetching the URL and swapping the
+                        response into <body>
+        defaultTimeout - 0 disables htmx 4's new 60 second request timeout
+    -->
+    <meta
+      name="htmx-config"
+      content='{"noSwap": [204, 304, "4xx", "5xx"], "history": "reload", "defaultTimeout": 0}'
+    />
     <script src="/static/tailwind.css"></script>
-    <script src="/static/htmx.min.js" defer></script>
+    <script src="/static/htmx4.js" defer></script>
     <script src="/static/alpine.min.js" defer></script>
     <script src="/static/chart.js"></script>
     <script src="/static/dashboard-charts.js"></script>

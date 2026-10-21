@@ -2,9 +2,9 @@
   id="readings-table-content"
   hx-trigger="readingAdded from:body"
   hx-get="/app/entry/readings-table"
-  hx-vals='{"page": 1, "sort": "{{sort}}", "order": "{{order}}"}'
-  hx-target="this"
-  hx-swap="outerHTML"
+  hx-vals:inherited='{"page": 1, "sort": "{{sort}}", "order": "{{order}}"}'
+  hx-target:inherited="this"
+  hx-swap:inherited="outerHTML"
   class="w-full md:block overflow-y-auto flex-1 border border-slate-800/60 rounded"
 >
   <table class="w-full text-left text-xs text-slate-300">
