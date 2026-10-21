@@ -54,10 +54,8 @@ def get_current_user() -> dict | None:
 def get_user_store() -> "MeterReadingStore":
     """Get the MeterReadingStore for the current authenticated user."""
     if not hasattr(request, "store"):
-        # Fallback for legacy/compat - uses default DB
-        from config import load_config
-        config = load_config()
-        request.store = MeterReadingStore(config.db_file)
+        # Fallback for legacy/compat - uses the default DB in the data dir
+        request.store = MeterReadingStore(ensure_user_db(""))
     return request.store
 
 

@@ -189,13 +189,21 @@ def test_ensure_user_db_resolves_relative_to_data_dir(test_config):
 
 
 def test_ensure_user_db_with_empty_db_file_falls_back_to_default(test_config):
+    """A user without a DB file gets the default DB - inside the data dir."""
     path = authdb.ensure_user_db("")
-    assert path == test_config.db_file
+    assert path == test_config.data_dir / test_config.db_file.name
     assert path.exists()
 
 
 def test_ensure_user_db_with_blank_db_file_falls_back_to_default(test_config):
-    assert authdb.ensure_user_db("   ") == test_config.db_file
+    assert authdb.ensure_user_db("   ") == test_config.data_dir / test_config.db_file.name
+
+
+def test_ensure_user_db_never_creates_a_db_outside_the_data_dir(test_config):
+    """Regression: the default DB used to land in the project root."""
+    for db_file in ("", "   ", "someone.db", "./someone.db"):
+        path = authdb.ensure_user_db(db_file)
+        assert path.parent == test_config.data_dir, db_file
 
 
 # ---------------------------------------------------------------------------
