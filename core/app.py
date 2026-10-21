@@ -1,14 +1,14 @@
 """Core application factory and setup."""
 
-from bottle import Bottle, default_app
+from bottle import Bottle, default_app, request, SimpleTemplate
 from config import load_config
 
 from auth import register_routes as register_auth_routes, init_auth_db
+from auth.policy import can as can_do, reload_policy
 from dashboard import register_routes as register_dashboard_routes
 from entry import register_routes as register_entry_routes
 from admin import register_routes as register_admin_routes
 from core.deps import send_static
-from config import load_config
 
 
 def create_app(config=None):
@@ -18,10 +18,16 @@ def create_app(config=None):
 
     app = Bottle()
 
+    # Load the Casbin policy and expose can(resource, action) to templates.
+    reload_policy()
+    SimpleTemplate.defaults["can"] = lambda resource, action: can_do(
+        getattr(request, "user", None), resource, action
+    )
+
     # Set as default app so routes register correctly
     default_app.push(app)
     try:
-        # Initialize auth DB
+        # Initialize auth DB (also migrates the legacy role CHECK constraint)
         init_auth_db()
 
         # Register auth routes

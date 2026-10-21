@@ -1,8 +1,8 @@
 """Entry routes: /app/entry, /app/entry/partial, /app/entry/readings-table, /readings"""
 
 from datetime import datetime
-from bottle import request, redirect, template
-from auth import require_auth
+from bottle import request, template
+from auth import requires
 from auth.deps import get_user_store
 from entry.services import (
     get_display_params,
@@ -15,9 +15,6 @@ config = load_config()
 
 
 def entry():
-    # Admin users should not see entry - redirect to admin panel
-    if request.user["role"] == "admin":
-        return redirect("/admin/users")
     # Full page render — includes base.html with CSS
     ctx = get_display_params()
     # Also need totals for base.html initial load
@@ -83,8 +80,7 @@ def add_reading():
 
 def register_routes(app):
     """Register all entry routes with the Bottle app."""
-    from auth import require_auth
-    app.get("/app/entry")(require_auth()(entry))
-    app.get("/app/entry/partial")(require_auth()(entry_partial))
-    app.get("/app/entry/readings-table")(require_auth()(entry_readings_table))
-    app.post("/readings")(require_auth()(add_reading))
+    app.get("/app/entry")(requires("entry", "view")(entry))
+    app.get("/app/entry/partial")(requires("entry", "view")(entry_partial))
+    app.get("/app/entry/readings-table")(requires("entry", "view")(entry_readings_table))
+    app.post("/readings")(requires("entry", "write")(add_reading))

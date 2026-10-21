@@ -26,6 +26,13 @@ EXPECTED_ROUTES = {
     ("GET", "/admin/users/<user_id:int>/edit"),
     ("POST", "/admin/users/<user_id:int>"),
     ("POST", "/admin/users/<user_id:int>/delete"),
+    ("GET", "/admin/roles"),
+    ("GET", "/admin/roles/partial"),
+    ("GET", "/admin/roles/new"),
+    ("POST", "/admin/roles"),
+    ("GET", "/admin/roles/<role>/edit"),
+    ("POST", "/admin/roles/<role>"),
+    ("POST", "/admin/roles/<role>/delete"),
     ("GET", "/static/<filename:path>"),
 }
 
@@ -56,6 +63,8 @@ def test_protected_routes_require_authentication(client):
         ("GET", "/app/entry/readings-table"),
         ("GET", "/admin/users"),
         ("GET", "/admin/users/new"),
+        ("GET", "/admin/roles"),
+        ("GET", "/admin/roles/new"),
     ]
     for method, path in protected:
         resp = client.request(method, path)

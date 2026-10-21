@@ -1,19 +1,40 @@
-"""Authentication dependencies and decorators."""
+"""Authentication dependencies and authorization decorators."""
 
 import functools
-from bottle import request, response, redirect
-from auth.db import (
-    verify_session,
-    get_user_by_id,
-    verify_password,
-    create_session,
-    count_users,
-    ensure_user_db,
-)
-from libsolar_sqlite import MeterReadingStore
-from config import load_config
 
-config = load_config()
+from bottle import redirect, request, response
+
+from auth.db import (
+    ensure_user_db,
+    get_user_by_id,
+    verify_session,
+)
+from auth.policy import DEFAULT_HOME, can, home_for
+from libsolar_sqlite import MeterReadingStore
+
+
+def _authenticate() -> tuple[dict | None, str | None]:
+    """Resolve the session user and attach ``user``/``store`` to the request.
+
+    Returns ``(user, None)`` on success, or ``(None, redirect_target)`` when
+    the request must be sent to the login page.
+    """
+    token = request.get_cookie("session")
+    if not token:
+        return None, "/login"
+
+    user_id = verify_session(token)
+    if not user_id:
+        return None, "/login"
+
+    user = get_user_by_id(user_id)
+    if not user or user["status"] != "approved":
+        response.delete_cookie("session")
+        return None, "/login?error=not_approved"
+
+    request.user = user
+    request.store = MeterReadingStore(ensure_user_db(user["db_file"]))
+    return user, None
 
 
 def get_current_user() -> dict | None:
@@ -21,13 +42,9 @@ def get_current_user() -> dict | None:
     token = request.get_cookie("session")
     if not token:
         return None
-    # Note: verify_session is imported from auth but we need the user_id
-    # We'll use the same pattern as require_auth
-    from auth import verify_session
     user_id = verify_session(token)
     if not user_id:
         return None
-    from auth import get_user_by_id
     user = get_user_by_id(user_id)
     if not user or user["status"] != "approved":
         return None
@@ -44,29 +61,34 @@ def get_user_store() -> "MeterReadingStore":
     return request.store
 
 
-def require_auth(roles: list[str] | None = None):
-    """Decorator: validate session, check role, inject user + store into request."""
+def requires(resource: str, action: str):
+    """Decorator: require an approved session with ``resource``/``action`` rights.
+
+    Authorization is declared at the route:
+
+        app.get("/admin/users")(requires("admin_users", "view")(handler))
+
+    The actual rules (which role may do what, and the home page used when a
+    request is denied) come from ``auth/policy.csv``.
+    """
+
     def decorator(callback):
         @functools.wraps(callback)
         def wrapper(*a, **kw):
-            token = request.get_cookie("session")
-            if not token:
-                return redirect("/login")
-            from auth import verify_session
-            user_id = verify_session(token)
-            if not user_id:
-                return redirect("/login")
-            from auth import get_user_by_id
-            user = get_user_by_id(user_id)
-            if not user or user["status"] != "approved":
-                response.delete_cookie("session")
-                return redirect("/login?error=not_approved")
-            if roles and user["role"] not in roles:
-                response.status = 403
-                return "Forbidden: insufficient role"
-            # Attach user and their store to request
-            request.user = user
-            request.store = MeterReadingStore(ensure_user_db(user["db_file"]))
+            user, login_redirect = _authenticate()
+            if login_redirect is not None:
+                return redirect(login_redirect)
+            if not can(user, resource, action):
+                target = home_for(user)
+                # If the role's own landing page is forbidden (or the role has
+                # no landing page at all), redirecting there would loop. Drop
+                # the session and explain instead.
+                if target == DEFAULT_HOME or target == request.path:
+                    response.delete_cookie("session")
+                    return redirect("/login?error=no_access")
+                return redirect(target)
             return callback(*a, **kw)
+
         return wrapper
+
     return decorator

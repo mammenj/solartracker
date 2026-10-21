@@ -38,7 +38,7 @@
       <!-- Desktop Tab Navigation Bar -->
       <nav class="hidden md:flex h-full gap-1 items-center">
         % if user:
-        % if user['role'] == 'admin':
+        % if can('admin_users', 'view'):
         <button
           hx-get="/admin/users"
           hx-target="#tab-content"
@@ -47,9 +47,22 @@
           :class="activeTab === 'admin' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
           class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
         >
-          Admin
+          Users
         </button>
-        % else:
+        % end
+        % if can('admin_policy', 'view'):
+        <button
+          hx-get="/admin/roles"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          @click="activeTab = 'roles'"
+          :class="activeTab === 'roles' ? 'border-emerald-500 text-emerald-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'"
+          class="px-5 h-full border-b-2 flex items-center text-xs font-medium transition-all duration-150"
+        >
+          Roles &amp; Permissions
+        </button>
+        % end
+        % if can('dashboard', 'view'):
         <button
           hx-get="/app/dashboard/partial"
           hx-target="#tab-content"
@@ -60,6 +73,8 @@
         >
           Dashboard Summary
         </button>
+        % end
+        % if can('entry', 'view'):
         <button
           hx-get="/app/entry/partial"
           hx-target="#tab-content"
@@ -86,10 +101,10 @@
       <div class="text-[11px] sm:text-xs text-slate-400 font-mono flex items-center gap-1.5">
         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
         % if user:
-        % if user['role'] == 'admin':
-        <span class="hidden sm:inline">System</span>Admin Panel
-        % else:
+        % if can('dashboard', 'view') or can('entry', 'view'):
         <span class="hidden sm:inline">DB</span>{{user['db_file']}}
+        % else:
+        <span class="hidden sm:inline">System</span>Admin Panel
         % end
         <span class="mx-1 text-slate-600">|</span>
         <span class="text-emerald-400">{{user['username']}} ({{user['role']}})</span>
@@ -112,6 +127,8 @@
       % include("templates/entry.html")
       % elif initial_tab == 'admin':
       % include("templates/admin_users.html")
+      % elif initial_tab == 'admin_roles':
+      % include("templates/admin_roles.html")
       % else:
       % include("templates/dashboard.html")
       % end
@@ -122,7 +139,7 @@
       class="md:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 border-t border-slate-800 flex justify-around p-1.5 z-50 backdrop-blur"
     >
       % if user:
-      % if user['role'] == 'admin':
+      % if can('admin_users', 'view'):
       <button
         hx-get="/admin/users"
         hx-target="#tab-content"
@@ -132,9 +149,23 @@
         class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
       >
         <span class="text-base mb-0.5">⚙️</span>
-        <span class="text-[10px] tracking-tight">Admin</span>
+        <span class="text-[10px] tracking-tight">Users</span>
       </button>
-      % else:
+      % end
+      % if can('admin_policy', 'view'):
+      <button
+        hx-get="/admin/roles"
+        hx-target="#tab-content"
+        hx-swap="innerHTML"
+        @click="activeTab = 'roles'"
+        :class="activeTab === 'roles' ? 'text-emerald-400 font-semibold' : 'text-slate-400'"
+        class="flex flex-col items-center py-1 px-3 text-xs transition-colors"
+      >
+        <span class="text-base mb-0.5">🔑</span>
+        <span class="text-[10px] tracking-tight">Roles</span>
+      </button>
+      % end
+      % if can('dashboard', 'view'):
       <button
         hx-get="/app/dashboard/partial"
         hx-target="#tab-content"
@@ -146,6 +177,8 @@
         <span class="text-base mb-0.5">📊</span>
         <span class="text-[10px] tracking-tight">Dashboard</span>
       </button>
+      % end
+      % if can('entry', 'view'):
       <button
         hx-get="/app/entry/partial"
         hx-target="#tab-content"

@@ -1,0 +1,25 @@
+# Solar Tracker authorization policy (Casbin).
+#
+# Edit this file to change who may do what. Admin -> Roles & Permissions
+# writes this same file and reloads it automatically.
+#
+#   p, <role>, <resource>, <action>   grant a permission to a role
+#   p2, <role>, <home-path>           landing page for that role
+#
+# Roles are free-form here; assign them to users on Admin -> Users.
+
+# Permission grants
+p, admin, admin_policy, update
+p, admin, admin_policy, view
+p, admin, admin_users, create
+p, admin, admin_users, delete
+p, admin, admin_users, update
+p, admin, admin_users, view
+p, user, dashboard, chart
+p, user, dashboard, view
+p, user, entry, view
+p, user, entry, write
+
+# Landing pages
+p2, admin, /admin/users
+p2, user, /app/dashboard

@@ -196,3 +196,75 @@ def test_ensure_user_db_with_empty_db_file_falls_back_to_default(test_config):
 
 def test_ensure_user_db_with_blank_db_file_falls_back_to_default(test_config):
     assert authdb.ensure_user_db("   ") == test_config.db_file
+
+
+# ---------------------------------------------------------------------------
+# Legacy schema migration
+# ---------------------------------------------------------------------------
+LEGACY_SCHEMA = """
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+    status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'disabled')) DEFAULT 'pending',
+    db_file TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+"""
+
+
+def test_init_auth_db_drops_legacy_role_check_and_preserves_rows(tmp_path, monkeypatch):
+    legacy = tmp_path / "legacy_auth.db"
+    with sqlite3.connect(legacy) as conn:
+        conn.executescript(LEGACY_SCHEMA)
+        conn.execute(
+            "INSERT INTO users (username, password_hash, full_name, role, status, db_file) "
+            "VALUES ('legacy', 'hash', 'Legacy Admin', 'admin', 'approved', 'legacy.db')"
+        )
+
+    monkeypatch.setattr(authdb, "AUTH_DB", legacy)
+    authdb.init_auth_db()
+
+    with sqlite3.connect(legacy) as conn:
+        table_sql = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+        ).fetchone()[0]
+        assert "CHECK (role IN" not in table_sql
+
+        # Existing row survived the rebuild.
+        assert conn.execute(
+            "SELECT username, role, status FROM users WHERE username = 'legacy'"
+        ).fetchone() == ("legacy", "admin", "approved")
+
+        # The rebuilt table accepts roles that are not admin/user.
+        conn.execute(
+            "INSERT INTO users (username, password_hash, full_name, role, status, db_file) "
+            "VALUES ('custom', 'hash', 'Custom Role', 'viewer', 'approved', 'custom.db')"
+        )
+        assert conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 2
+
+        indexes = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'users'"
+            )
+        }
+    assert {"idx_users_username", "idx_users_status"} <= indexes
+
+
+def test_init_auth_db_is_idempotent_after_migration(tmp_path, monkeypatch):
+    legacy = tmp_path / "legacy_auth.db"
+    with sqlite3.connect(legacy) as conn:
+        conn.executescript(LEGACY_SCHEMA)
+
+    monkeypatch.setattr(authdb, "AUTH_DB", legacy)
+    authdb.init_auth_db()
+    authdb.init_auth_db()  # second run must be a no-op
+
+    with sqlite3.connect(legacy) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0

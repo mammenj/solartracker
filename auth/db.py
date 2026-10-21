@@ -66,21 +66,58 @@ def verify_session(token: str) -> Optional[int]:
 # Auth database schema & initialization
 # ---------------------------------------------------------------------------
 
-SCHEMA = """
+STATUSES = ("pending", "approved", "disabled")
+
+USERS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+    role TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'disabled')) DEFAULT 'pending',
     db_file TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+"""
+
+SCHEMA = USERS_TABLE_SQL + """
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 """
+
+#: Marker present in the legacy schema that limited roles to admin/user.
+_LEGACY_ROLE_CHECK = "CHECK (role IN"
+
+
+def _migrate_role_constraint(conn: sqlite3.Connection) -> None:
+    """Drop the legacy ``role IN ('admin', 'user')`` CHECK constraint.
+
+    Roles are now defined by ``auth/policy.csv``, so the database must accept
+    any role name. The table is rebuilt in place; existing rows are preserved.
+    """
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+    ).fetchone()
+    if not row or _LEGACY_ROLE_CHECK not in (row[0] or ""):
+        return
+
+    conn.execute("DROP TABLE IF EXISTS users_role_migration")
+    conn.execute("ALTER TABLE users RENAME TO users_role_migration")
+    # Indexes follow the renamed table, so drop them before recreating.
+    conn.execute("DROP INDEX IF EXISTS idx_users_username")
+    conn.execute("DROP INDEX IF EXISTS idx_users_status")
+    conn.execute(USERS_TABLE_SQL)
+    conn.execute(
+        "INSERT INTO users "
+        "(id, username, password_hash, full_name, role, status, db_file, created_at, updated_at) "
+        "SELECT id, username, password_hash, full_name, role, status, db_file, created_at, updated_at "
+        "FROM users_role_migration"
+    )
+    conn.execute("DROP TABLE users_role_migration")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)")
 
 
 def init_auth_db() -> None:
@@ -89,7 +126,12 @@ def init_auth_db() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with closing(sqlite3.connect(AUTH_DB)) as conn:
         conn.executescript(SCHEMA)
-        conn.commit()
+        try:
+            _migrate_role_constraint(conn)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
 
 
 def _row_to_user(row: tuple) -> dict:
@@ -110,12 +152,20 @@ def _row_to_user(row: tuple) -> dict:
 # User CRUD
 # ---------------------------------------------------------------------------
 
+def _allowed_roles() -> set[str]:
+    """Roles currently defined in the authorization policy file."""
+    from auth.policy import roles
+
+    return set(roles())
+
+
 def create_user(username: str, password: str, full_name: str, role: str, db_file: str, status: str = "pending") -> int:
     """Create a new user, return user_id."""
-    if role not in ("admin", "user"):
-        raise ValueError("role must be 'admin' or 'user'")
-    if status not in ("pending", "approved", "disabled"):
-        raise ValueError("status must be 'pending', 'approved', or 'disabled'")
+    allowed = _allowed_roles()
+    if role not in allowed:
+        raise ValueError(f"role must be one of: {', '.join(sorted(allowed))}")
+    if status not in STATUSES:
+        raise ValueError(f"status must be one of: {', '.join(STATUSES)}")
     pw_hash = hash_password(password)
     now = datetime.now().isoformat()
     with closing(sqlite3.connect(AUTH_DB)) as conn:
@@ -178,6 +228,10 @@ def update_user(user_id: int, **fields) -> bool:
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return False
+    if "role" in updates and updates["role"] not in _allowed_roles():
+        raise ValueError(f"role must be one of: {', '.join(sorted(_allowed_roles()))}")
+    if "status" in updates and updates["status"] not in STATUSES:
+        raise ValueError(f"status must be one of: {', '.join(STATUSES)}")
     updates["updated_at"] = datetime.now().isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in updates)
     values = list(updates.values()) + [user_id]
@@ -198,6 +252,23 @@ def delete_user(user_id: int) -> bool:
 def count_users() -> int:
     with closing(sqlite3.connect(AUTH_DB)) as conn:
         return conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+
+
+def count_users_by_role() -> dict[str, int]:
+    """Return ``{role: user_count}`` for every role currently in use."""
+    with closing(sqlite3.connect(AUTH_DB)) as conn:
+        rows = conn.execute(
+            "SELECT role, COUNT(*) FROM users GROUP BY role"
+        ).fetchall()
+    return {role: count for role, count in rows}
+
+
+def count_users_with_role(role: str) -> int:
+    """Number of users assigned to ``role``."""
+    with closing(sqlite3.connect(AUTH_DB)) as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM users WHERE role = ?", (role,)
+        ).fetchone()[0]
 
 
 # ---------------------------------------------------------------------------

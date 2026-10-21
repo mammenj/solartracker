@@ -21,10 +21,12 @@ def test_admin_is_redirected_away_from_user_pages(client, login, admin):
         assert resp.location == "/admin/users", path
 
 
-def test_normal_user_is_forbidden_from_admin(client, login, user):
+def test_normal_user_is_redirected_home_from_admin(client, login, user):
     login(user)
     for path in ("/admin/users", "/admin/users/new"):
-        assert client.get(path).status == 403, path
+        resp = client.get(path)
+        assert resp.status == 303, path
+        assert resp.location == "/app/dashboard", path
 
 
 def test_normal_user_cannot_create_users(client, login, user):
@@ -33,7 +35,8 @@ def test_normal_user_cannot_create_users(client, login, user):
         "/admin/users",
         {"username": "sneaky", "password": "password123", "full_name": "S", "role": "user"},
     )
-    assert resp.status == 403
+    assert resp.status == 303
+    assert resp.location == "/app/dashboard"
     assert get_user("sneaky") is None
 
 
@@ -194,6 +197,28 @@ def test_promoting_user_to_admin_keeps_db_file(client, login, admin, user):
     assert updated["role"] == "admin"
     # db_file is only written for role=user, so the previous value survives
     assert updated["db_file"] == "user1.db"
+
+
+def test_admin_cannot_change_own_role(client, login, admin):
+    login(admin)
+    resp = client.post(
+        f"/admin/users/{admin['id']}",
+        {"full_name": "Administrator", "role": "user", "status": "approved"},
+    )
+    assert resp.status == 200
+    assert "cannot change your own role" in resp.text
+    assert get_user_by_id(admin["id"])["role"] == "admin"
+
+
+def test_admin_cannot_disable_own_account(client, login, admin):
+    login(admin)
+    resp = client.post(
+        f"/admin/users/{admin['id']}",
+        {"full_name": "Administrator", "role": "admin", "status": "disabled"},
+    )
+    assert resp.status == 200
+    assert "cannot disable your own account" in resp.text
+    assert get_user_by_id(admin["id"])["status"] == "approved"
 
 
 # ---------------------------------------------------------------------------

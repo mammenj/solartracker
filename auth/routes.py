@@ -11,6 +11,7 @@ from auth.db import (
     count_users,
     get_user_by_id,
 )
+from auth.policy import home_for
 from config import load_config
 
 config = load_config()
@@ -61,22 +62,41 @@ def setup_post():
     # try/except above or the redirect would be swallowed and the form re-rendered.
     token = create_session(user_id)
     response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
-    return redirect("/app/dashboard")
+    return redirect(home_for(get_user_by_id(user_id)))
 
 
 def login_page():
-    """Login page - redirects authenticated users to dashboard or setup."""
+    """Login page - redirects authenticated users to their home page or setup."""
+    error = request.params.get("error")
     token = request.get_cookie("session")
     if token:
-        if verify_session(token):
-            return redirect("/app/dashboard")
+        user_id = verify_session(token)
+        if user_id:
+            user = get_user_by_id(user_id)
+            if user and user["status"] == "approved":
+                target = home_for(user)
+                # A role missing from the policy has no home; redirecting to
+                # /login would loop forever, so clear the session instead.
+                if target != "/login":
+                    return redirect(target)
+                response.delete_cookie("session")
+                error = "no_access"
+
     # Redirect to setup if no users exist
     if count_users() == 0:
         return redirect("/setup")
-    error = request.params.get("error")
+
+    messages = {
+        "not_approved": "Account not approved. Contact an administrator.",
+        "no_access": "Your account cannot open its landing page. Contact an administrator.",
+    }
     from config import load_config
     config = load_config()
-    return template("templates/login.html", error=error, version=config.app_version)
+    return template(
+        "templates/login.html",
+        error=messages.get(error, error),
+        version=config.app_version,
+    )
 
 
 def login_post():
@@ -94,7 +114,7 @@ def login_post():
         return template("templates/login.html", error="Account not approved. Contact admin.", version=config.app_version)
     token = create_session(user["id"])
     response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
-    return redirect("/app/dashboard")
+    return redirect(home_for(user))
 
 
 def logout():

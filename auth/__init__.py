@@ -1,11 +1,17 @@
 """Auth package initialization."""
 
 from auth.deps import (
-    require_auth,
+    requires,
     get_user_store,
     get_current_user,
 )
 from auth.routes import register_routes
+from auth.policy import (
+    can,
+    home_for,
+    reload_policy,
+    roles,
+)
 from auth.db import (
     init_auth_db,
     create_user,
@@ -18,13 +24,19 @@ from auth.db import (
     update_user,
     delete_user,
     count_users,
+    count_users_by_role,
+    count_users_with_role,
     ensure_user_db,
 )
 
 __all__ = [
-    "require_auth",
+    "requires",
     "get_user_store",
     "get_current_user",
+    "can",
+    "home_for",
+    "reload_policy",
+    "roles",
     "register_routes",
     "init_auth_db",
     "create_user",
@@ -37,5 +49,7 @@ __all__ = [
     "update_user",
     "delete_user",
     "count_users",
+    "count_users_by_role",
+    "count_users_with_role",
     "ensure_user_db",
 ]

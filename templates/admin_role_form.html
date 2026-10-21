@@ -1,0 +1,97 @@
+<div class="min-h-0 flex-1 flex flex-col gap-4">
+  <div class="flex items-center justify-between mb-4 shrink-0">
+    <h2 class="text-xs sm:text-sm font-semibold text-slate-200">{{ 'Edit Role' if role else 'Create Role' }}</h2>
+    <a
+      href="/admin/roles"
+      hx-get="/admin/roles/partial"
+      hx-target="#tab-content"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded transition-colors"
+    >
+      ← Back
+    </a>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 flex-1 max-w-2xl">
+    % if errors:
+    <div class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-300 text-sm space-y-1">
+      % for e in errors:
+      <div>• {{e}}</div>
+      % end
+    </div>
+    % end
+
+    <form method="post" action="{{ '/admin/roles/' + role if role else '/admin/roles' }}" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Role Name</label>
+        <input
+          type="text"
+          name="role"
+          value="{{ role_name }}"
+          {{ 'readonly' if role else 'required' }}
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm {{ 'text-slate-500 cursor-not-allowed' if role else 'text-slate-100' }} focus:outline-none focus:border-emerald-500"
+        />
+        % if role:
+        <p class="text-[10px] text-slate-500 mt-1">Role names cannot be renamed.</p>
+        % else:
+        <p class="text-[10px] text-slate-500 mt-1">Lowercase letters, numbers, '_' and '-' (e.g. viewer, operator).</p>
+        % end
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Home Page</label>
+        <input
+          type="text"
+          name="home"
+          value="{{ home }}"
+          required
+          class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+        />
+        <p class="text-[10px] text-slate-500 mt-1">Where this role lands after login and after a denied request.</p>
+      </div>
+
+      <div class="space-y-3">
+        <div class="text-xs font-medium text-slate-400">Permissions</div>
+        % for group in groups:
+        <fieldset class="border border-slate-800 rounded-lg p-3">
+          <legend class="px-1 text-xs font-medium text-slate-400">{{group['label']}}</legend>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            % for perm in group['permissions']:
+            <label class="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                name="permissions"
+                value="{{perm['value']}}"
+                {{ 'checked' if perm['value'] in selected else '' }}
+                class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+              />
+              {{perm['label']}}
+            </label>
+            % end
+          </div>
+        </fieldset>
+        % end
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button
+          type="submit"
+          class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold py-2.5 rounded text-sm transition-colors"
+        >
+          {{ 'Update' if role else 'Create' }}
+        </button>
+        <a
+          href="/admin/roles"
+          hx-get="/admin/roles/partial"
+          hx-target="#tab-content"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded text-sm text-center transition-colors"
+        >
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>

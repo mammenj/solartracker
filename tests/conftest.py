@@ -13,6 +13,7 @@ import sys
 sys.argv = ["st"]
 
 import importlib
+import shutil
 from http.cookies import SimpleCookie
 from io import BytesIO
 from urllib.parse import urlencode, urlsplit
@@ -149,7 +150,7 @@ def test_config(tmp_path) -> AppConfig:
 
 
 @pytest.fixture(autouse=True)
-def isolate(test_config, monkeypatch):
+def isolate(test_config, tmp_path, monkeypatch):
     """Redirect every hard-coded path/global at the temporary directory."""
     import config as config_module
 
@@ -168,6 +169,15 @@ def isolate(test_config, monkeypatch):
         module = importlib.import_module(module_name)
         if hasattr(module, "config"):
             monkeypatch.setattr(module, "config", test_config)
+
+    # Authorization policy: work on a throwaway copy of auth/policy.csv and
+    # reset the process-wide enforcer so tests never touch the real policy.
+    import auth.policy as policy_module
+
+    tmp_policy = tmp_path / "policy.csv"
+    shutil.copy(policy_module.POLICY_PATH, tmp_policy)
+    monkeypatch.setattr(policy_module, "POLICY_PATH", tmp_policy)
+    monkeypatch.setattr(policy_module, "_policy", None)
 
     yield test_config
 

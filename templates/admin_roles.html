@@ -1,0 +1,85 @@
+<div class="min-h-0 flex-1 flex flex-col gap-4">
+  <div class="flex items-center justify-between mb-4 shrink-0">
+    <div>
+      <h2 class="text-xs sm:text-sm font-semibold text-slate-200">Roles &amp; Permissions</h2>
+      <p class="text-[10px] text-slate-500 font-mono">source: auth/policy.csv</p>
+    </div>
+    <a
+      href="/admin/roles/new"
+      hx-get="/admin/roles/new"
+      hx-target="#tab-content"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold text-xs rounded transition-colors"
+    >
+      + Add Role
+    </a>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+    <div class="overflow-x-auto flex-1">
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10">
+          <tr>
+            <th class="p-3">Role</th>
+            <th class="p-3">Permissions</th>
+            <th class="p-3">Home</th>
+            <th class="p-3">Users</th>
+            <th class="p-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          % if not roles:
+          <tr>
+            <td colspan="5" class="p-6 text-center text-slate-500">No roles defined in the policy file.</td>
+          </tr>
+          % end
+          % for r in roles:
+          <tr class="hover:bg-slate-800/30 transition-colors align-top">
+            <td class="p-3 font-medium text-slate-200">{{r['name']}}</td>
+            <td class="p-3">
+              % if r['permissions']:
+              <div class="flex flex-wrap gap-1">
+                % for p in r['permissions']:
+                <span class="px-2 py-0.5 rounded bg-blue-900/30 text-blue-300 text-[10px] font-medium">{{p['label']}}</span>
+                % end
+              </div>
+              % else:
+              <span class="text-slate-600">No permissions</span>
+              % end
+            </td>
+            <td class="p-3 font-mono text-slate-400">{{r['home']}}</td>
+            <td class="p-3 text-slate-400">{{r['user_count']}}</td>
+            <td class="p-3">
+              <div class="flex items-center gap-3">
+                <a
+                  href="/admin/roles/{{r['name']}}/edit"
+                  hx-get="/admin/roles/{{r['name']}}/edit"
+                  hx-target="#tab-content"
+                  hx-swap="innerHTML"
+                  hx-push-url="true"
+                  class="text-emerald-400 hover:text-emerald-300 font-medium"
+                >
+                  Edit
+                </a>
+                % if r['user_count'] == 0:
+                <form
+                  method="post"
+                  action="/admin/roles/{{r['name']}}/delete"
+                  class="inline"
+                  onsubmit="return confirm('Delete role {{r['name']}}?');"
+                >
+                  <button type="submit" class="text-red-400 hover:text-red-300 font-medium">Delete</button>
+                </form>
+                % else:
+                <span class="text-slate-600" title="Role still has users">Delete</span>
+                % end
+              </div>
+            </td>
+          </tr>
+          % end
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

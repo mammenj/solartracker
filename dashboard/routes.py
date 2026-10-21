@@ -1,8 +1,8 @@
 """Dashboard routes: /, /app/dashboard, /app/dashboard/partial, /app/dashboard/periods-table, /app/dashboard/chart"""
 
 import json
-from bottle import request, redirect, template
-from auth import require_auth
+from bottle import request, template
+from auth import requires
 from dashboard.services import (
     get_periods,
     get_totals,
@@ -15,9 +15,6 @@ config = load_config()
 
 
 def index():
-    # Admin users should not see dashboard - redirect to admin panel
-    if request.user["role"] == "admin":
-        return redirect("/admin/users")
     periods = get_periods()
     totals = get_totals(periods)
     return template(
@@ -32,9 +29,6 @@ def index():
 
 
 def dashboard():
-    # Admin users should not see dashboard - redirect to admin panel
-    if request.user["role"] == "admin":
-        return redirect("/admin/users")
     # Full page render (like /) — includes base.html with CSS
     periods = get_periods()
     totals = get_totals(periods)
@@ -80,10 +74,13 @@ def dashboard_chart():
 
 
 def register_routes(app):
-    """Register all dashboard routes with the Bottle app."""
-    from auth import require_auth
-    app.get("/")(require_auth()(index))
-    app.get("/app/dashboard")(require_auth()(dashboard))
-    app.get("/app/dashboard/partial")(require_auth()(dashboard_partial))
-    app.get("/app/dashboard/periods-table")(require_auth()(dashboard_periods_table))
-    app.get("/app/dashboard/chart")(require_auth()(dashboard_chart))
+    """Register all dashboard routes with the Bottle app.
+
+    Permissions are declared next to each route; the rules for which role
+    holds them live in ``auth/policy.csv``.
+    """
+    app.get("/")(requires("dashboard", "view")(index))
+    app.get("/app/dashboard")(requires("dashboard", "view")(dashboard))
+    app.get("/app/dashboard/partial")(requires("dashboard", "view")(dashboard_partial))
+    app.get("/app/dashboard/periods-table")(requires("dashboard", "view")(dashboard_periods_table))
+    app.get("/app/dashboard/chart")(requires("dashboard", "chart")(dashboard_chart))

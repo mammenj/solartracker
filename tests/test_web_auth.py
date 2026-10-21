@@ -36,7 +36,8 @@ def test_login_page_renders_when_users_exist(client, admin):
 def test_login_with_valid_credentials_sets_session_cookie(client, admin):
     resp = client.post("/login", {"username": "admin", "password": "admin12345"})
     assert resp.status == 303
-    assert resp.location == "/app/dashboard"
+    # The landing page is declared per role in auth/policy.csv.
+    assert resp.location == "/admin/users"
     assert "session" in client.cookies
 
 
@@ -113,12 +114,12 @@ def test_setup_creates_an_admin_account(client, test_config):
     assert root["db_file"] == test_config.db_file.name
 
 
-def test_setup_post_redirects_to_dashboard(client):
+def test_setup_post_redirects_to_home(client):
     resp = client.post(
         "/setup", {"username": "root", "password": "password123", "full_name": "Root"}
     )
     assert resp.status == 303
-    assert resp.location == "/app/dashboard"
+    assert resp.location == "/admin/users"
     assert "session" in client.cookies
 
 
