@@ -1,52 +1,69 @@
-"""Core application factory and setup."""
+"""Core Quart application factory and setup."""
 
-from bottle import Bottle, default_app, request, SimpleTemplate
+from quart import Quart, request
 from config import load_config
+from pathlib import Path
 
-from auth import register_routes as register_auth_routes, init_auth_db
 from auth.policy import can as can_do, reload_policy
-from dashboard import register_routes as register_dashboard_routes
-from entry import register_routes as register_entry_routes
-from admin import register_routes as register_admin_routes
-from core.deps import send_static
+from auth.routes import register_routes as register_auth_routes
+from dashboard.routes import register_routes as register_dashboard_routes
+from entry.routes import register_routes as register_entry_routes
+from admin.routes import register_routes as register_admin_routes
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _format_float(value, precision: int = 2) -> str:
+    """Render a number with a fixed number of decimals (e.g. 10 -> '10.00')."""
+    try:
+        return f"{float(value):.{precision}f}"
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def create_app(config=None):
-    """Create and configure the Bottle application."""
+    """Create and configure the Quart application."""
     if config is None:
         config = load_config()
 
-    app = Bottle()
+    app = Quart(
+        __name__,
+        static_folder=str(PROJECT_ROOT / "static"),
+        static_url_path="/static",
+        template_folder=str(PROJECT_ROOT),
+    )
 
     # Load the Casbin policy and expose can(resource, action) to templates.
     reload_policy()
-    SimpleTemplate.defaults["can"] = lambda resource, action: can_do(
+    app.jinja_env.globals["can"] = lambda resource, action: can_do(
         getattr(request, "user", None), resource, action
     )
+    app.jinja_env.filters["format_float"] = _format_float
 
-    # Set as default app so routes register correctly
-    default_app.push(app)
-    try:
-        # Initialize auth DB (also migrates the legacy role CHECK constraint)
-        init_auth_db()
+    # Register routes
+    register_auth_routes(app)
+    register_dashboard_routes(app)
+    register_entry_routes(app)
+    register_admin_routes(app)
 
-        # Register auth routes
-        register_auth_routes(app)
-        register_dashboard_routes(app)
-        register_entry_routes(app)
-        register_admin_routes(app)
-
-        # Static files
-        app.get("/static/<filename:path>")(send_static)
-    finally:
-        default_app.pop()
+    # Health check endpoint for testing
+    @app.route("/health")
+    async def health():
+        return {"status": "ok", "framework": "quart"}
 
     return app
 
 
-def run_app(app, config=None):
-    """Run the application with the given config."""
+async def run_app(app, config=None):
+    """Run the application with the given config using Hypercorn."""
     if config is None:
         config = load_config()
-    from bottle import run
-    run(app, host=config.host, port=config.port, server=config.server, debug=True)
+
+    from hypercorn.asyncio import serve
+    from hypercorn.config import Config as HypercornConfig
+
+    hconfig = HypercornConfig()
+    hconfig.bind = [f"{config.host}:{config.port}"]
+
+    await serve(app, hconfig)

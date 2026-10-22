@@ -136,13 +136,13 @@
     >
       <!-- Initial Load: Tab Content -->
       {% if initial_tab == 'entry' %}
-        {% include "entry.html" %}
+        {% include "templates/entry.html" %}
       {% elif initial_tab == 'admin' %}
-        {% include "admin_users.html" %}
+        {% include "templates/admin_users.html" %}
       {% elif initial_tab == 'admin_roles' %}
-        {% include "admin_roles.html" %}
+        {% include "templates/admin_roles.html" %}
       {% else %}
-        {% include "dashboard.html" %}
+        {% include "templates/dashboard.html" %}
       {% endif %}
     </main>
 

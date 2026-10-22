@@ -1,6 +1,6 @@
-"""Authentication routes: login, logout, setup."""
+"""Authentication routes: login, logout, setup (Quart/async version)."""
 
-from bottle import request, response, redirect, template
+from quart import request, redirect, render_template, make_response
 from auth.db import (
     init_auth_db,
     create_user,
@@ -16,30 +16,28 @@ from config import load_config
 
 config = load_config()
 
-# Initialize auth DB on module load
-init_auth_db()
 
-
-def setup_page():
+async def setup_page():
     """First-run setup: create initial admin user if no users exist."""
-    if count_users() > 0:
+    if await count_users() > 0:
         return redirect("/login")
-    return template("templates/setup.html", errors=[], version=config.app_version)
+    return await render_template("templates/setup.html", errors=[], version=config.app_version)
 
 
-def setup_post():
+async def setup_post():
     """Process first-run setup form."""
-    if count_users() > 0:
+    if await count_users() > 0:
         return redirect("/login")
 
-    username = request.forms.get("username", "").strip()
-    password = request.forms.get("password", "")
-    full_name = request.forms.get("full_name", "").strip()
+    form = await request.form
+    username = form.get("username", "").strip()
+    password = form.get("password", "")
+    full_name = form.get("full_name", "").strip()
 
     errors = []
     if not username:
         errors.append("Username required")
-    if get_user(username):
+    if await get_user(username):
         errors.append("Username already exists")
     if not password:
         errors.append("Password required")
@@ -49,84 +47,83 @@ def setup_post():
         errors.append("Full name required")
 
     if errors:
-        return template("templates/setup.html", errors=errors, version=config.app_version)
+        return await render_template("templates/setup.html", errors=errors, version=config.app_version)
 
     try:
-        user_id = create_user(
+        user_id = await create_user(
             username, password, full_name, "admin", config.db_file.name, "approved"
         )
     except Exception as e:
-        return template("templates/setup.html", errors=[str(e)], version=config.app_version)
+        return await render_template("templates/setup.html", errors=[str(e)], version=config.app_version)
 
-    # NOTE: redirect() raises Bottle's HTTPResponse, so it must stay outside the
+    # NOTE: redirect() raises Quart's HTTPResponse, so it must stay outside the
     # try/except above or the redirect would be swallowed and the form re-rendered.
     token = create_session(user_id)
-    response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
-    return redirect(home_for(get_user_by_id(user_id)))
+    resp = await make_response(redirect(home_for(await get_user_by_id(user_id))))
+    resp.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
+    return resp
 
 
-def login_page():
+async def login_page():
     """Login page - redirects authenticated users to their home page or setup."""
-    error = request.params.get("error")
-    token = request.get_cookie("session")
+    error = request.args.get("error")
+    token = request.cookies.get("session")
     if token:
         user_id = verify_session(token)
         if user_id:
-            user = get_user_by_id(user_id)
+            user = await get_user_by_id(user_id)
             if user and user["status"] == "approved":
                 target = home_for(user)
                 # A role missing from the policy has no home; redirecting to
                 # /login would loop forever, so clear the session instead.
                 if target != "/login":
                     return redirect(target)
-                response.delete_cookie("session")
-                error = "no_access"
+                resp = await make_response(redirect("/login"))
+                resp.delete_cookie("session")
+                return resp
 
     # Redirect to setup if no users exist
-    if count_users() == 0:
+    if await count_users() == 0:
         return redirect("/setup")
 
     messages = {
         "not_approved": "Account not approved. Contact an administrator.",
         "no_access": "Your account cannot open its landing page. Contact an administrator.",
     }
-    from config import load_config
-    config = load_config()
-    return template(
+    return await render_template(
         "templates/login.html",
         error=messages.get(error, error),
         version=config.app_version,
     )
 
 
-def login_post():
+async def login_post():
     """Process login form."""
-    username = request.forms.get("username", "").strip()
-    password = request.forms.get("password", "")
-    user = get_user(username)
+    form = await request.form
+    username = form.get("username", "").strip()
+    password = form.get("password", "")
+    user = await get_user(username)
     if not user or not verify_password(password, user["password_hash"]):
-        from config import load_config
-        config = load_config()
-        return template("templates/login.html", error="Invalid username or password", version=config.app_version)
+        return await render_template("templates/login.html", error="Invalid username or password", version=config.app_version)
     if user["status"] != "approved":
-        from config import load_config
-        config = load_config()
-        return template("templates/login.html", error="Account not approved. Contact admin.", version=config.app_version)
+        return await render_template("templates/login.html", error="Account not approved. Contact admin.", version=config.app_version)
     token = create_session(user["id"])
-    response.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
-    return redirect(home_for(user))
+    resp = await make_response(redirect(home_for(user)))
+    resp.set_cookie("session", token, httponly=True, samesite="Lax", max_age=24*3600, path="/")
+    return resp
 
 
-def logout():
+async def logout():
     """Logout - clear session cookie."""
-    response.delete_cookie("session", path="/")
-    return redirect("/login")
+    resp = await make_response(redirect("/login"))
+    resp.delete_cookie("session", path="/")
+    return resp
 
 
 def register_routes(app):
-    """Register all auth routes with the Bottle app."""
-    app.get("/setup")(setup_page)
-    app.post("/setup")(setup_post)
-    app.get("/login")(login_page)
-    app.post("/login")(login_post)
-    app.post("/logout")(logout)
+    """Register all auth routes with the Quart app."""
+    app.add_url_rule("/setup", view_func=setup_page, methods=["GET"])
+    app.add_url_rule("/setup", view_func=setup_post, methods=["POST"])
+    app.add_url_rule("/login", view_func=login_page, methods=["GET"])
+    app.add_url_rule("/login", view_func=login_post, methods=["POST"])
+    app.add_url_rule("/logout", view_func=logout, methods=["POST"])

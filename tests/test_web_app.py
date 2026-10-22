@@ -1,6 +1,6 @@
 """HTTP-level tests for the dashboard and data-entry areas."""
 
-from auth.db_quart import ensure_user_db
+from auth.db import ensure_user_db
 
 
 # ---------------------------------------------------------------------------

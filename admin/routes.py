@@ -1,8 +1,7 @@
-"""Admin routes: users and roles/permissions."""
+"""Admin routes: users and roles/permissions (Quart version)."""
 
-from bottle import request, template
-
-from auth import requires
+from quart import request, render_template
+from auth.deps import requires
 from admin.services import (
     admin_role_create,
     admin_role_delete,
@@ -23,20 +22,20 @@ from config import load_config
 config = load_config()
 
 
-def admin_users():
-    params = get_admin_users_params()
+async def admin_users():
+    params = await get_admin_users_params()
     params["current_user_id"] = request.user["id"]
 
     # Check if htmx request (for partial loads via htmx)
     if request.headers.get("HX-Request"):
-        return template(
+        return await render_template(
             "templates/admin_users.html",
             **params,
             version=config.app_version,
             db_name=config.db_file.name,
         )
 
-    return template(
+    return await render_template(
         "templates/base.html",
         version=config.app_version,
         db_name=config.db_file.name,
@@ -46,11 +45,11 @@ def admin_users():
     )
 
 
-def admin_users_partial():
+async def admin_users_partial():
     """Partial render for htmx tab navigation."""
-    params = get_admin_users_params()
+    params = await get_admin_users_params()
     params["current_user_id"] = request.user["id"]
-    return template(
+    return await render_template(
         "templates/admin_users.html",
         **params,
         version=config.app_version,
@@ -59,21 +58,21 @@ def admin_users_partial():
 
 
 def register_routes(app):
-    """Register all admin routes with the Bottle app."""
+    """Register all admin routes with the Quart app."""
     # Users
-    app.get("/admin/users")(requires("admin_users", "view")(admin_users))
-    app.get("/admin/users/partial")(requires("admin_users", "view")(admin_users_partial))
-    app.get("/admin/users/new")(requires("admin_users", "view")(admin_user_new))
-    app.post("/admin/users")(requires("admin_users", "create")(admin_user_create))
-    app.get("/admin/users/<user_id:int>/edit")(requires("admin_users", "update")(admin_user_edit))
-    app.post("/admin/users/<user_id:int>")(requires("admin_users", "update")(admin_user_update))
-    app.post("/admin/users/<user_id:int>/delete")(requires("admin_users", "delete")(admin_user_delete))
+    app.add_url_rule("/admin/users", view_func=requires("admin_users", "view")(admin_users), methods=["GET"])
+    app.add_url_rule("/admin/users/partial", view_func=requires("admin_users", "view")(admin_users_partial), methods=["GET"])
+    app.add_url_rule("/admin/users/new", view_func=requires("admin_users", "view")(admin_user_new), methods=["GET"])
+    app.add_url_rule("/admin/users", view_func=requires("admin_users", "create")(admin_user_create), methods=["POST"])
+    app.add_url_rule("/admin/users/<int:user_id>/edit", view_func=requires("admin_users", "update")(admin_user_edit), methods=["GET"])
+    app.add_url_rule("/admin/users/<int:user_id>", view_func=requires("admin_users", "update")(admin_user_update), methods=["POST"])
+    app.add_url_rule("/admin/users/<int:user_id>/delete", view_func=requires("admin_users", "delete")(admin_user_delete), methods=["POST"])
 
     # Roles & permissions
-    app.get("/admin/roles")(requires("admin_policy", "view")(admin_roles))
-    app.get("/admin/roles/partial")(requires("admin_policy", "view")(admin_roles_partial))
-    app.get("/admin/roles/new")(requires("admin_policy", "view")(admin_role_new))
-    app.post("/admin/roles")(requires("admin_policy", "update")(admin_role_create))
-    app.get("/admin/roles/<role>/edit")(requires("admin_policy", "view")(admin_role_edit))
-    app.post("/admin/roles/<role>")(requires("admin_policy", "update")(admin_role_update))
-    app.post("/admin/roles/<role>/delete")(requires("admin_policy", "update")(admin_role_delete))
+    app.add_url_rule("/admin/roles", view_func=requires("admin_policy", "view")(admin_roles), methods=["GET"])
+    app.add_url_rule("/admin/roles/partial", view_func=requires("admin_policy", "view")(admin_roles_partial), methods=["GET"])
+    app.add_url_rule("/admin/roles/new", view_func=requires("admin_policy", "view")(admin_role_new), methods=["GET"])
+    app.add_url_rule("/admin/roles", view_func=requires("admin_policy", "update")(admin_role_create), methods=["POST"])
+    app.add_url_rule("/admin/roles/<string:role>/edit", view_func=requires("admin_policy", "view")(admin_role_edit), methods=["GET"])
+    app.add_url_rule("/admin/roles/<string:role>", view_func=requires("admin_policy", "update")(admin_role_update), methods=["POST"])
+    app.add_url_rule("/admin/roles/<string:role>/delete", view_func=requires("admin_policy", "update")(admin_role_delete), methods=["POST"])

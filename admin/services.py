@@ -1,8 +1,7 @@
-"""Admin services for user and role management."""
+"""Admin services for user and role management (Quart/async version)."""
 
 from math import ceil
-
-from bottle import request, template, redirect, response
+from quart import request, render_template, redirect, make_response
 
 from auth.catalog import (
     home_requires,
@@ -23,6 +22,7 @@ from auth.db import (
     update_user,
 )
 from auth.policy import get_policy
+from auth.deps import can as can_async
 from config import load_config
 
 config = load_config()
@@ -53,15 +53,15 @@ def sortable_headers(sort: str, order: str, fields: list[tuple[str, str]]) -> li
     return headers
 
 
-def get_admin_users_params():
+async def get_admin_users_params():
     """Get parameters for admin users list with paging and sorting."""
     try:
-        page = max(1, int(request.params.get("page", "1")))
+        page = max(1, int(request.args.get("page", "1")))
     except (ValueError, TypeError):
         page = 1
-    sort = request.params.get("sort", "username")
-    order = request.params.get("order", "asc")
-    users, total = list_users(page, 10, sort, order)
+    sort = request.args.get("sort", "username")
+    order = request.args.get("order", "asc")
+    users, total = await list_users(page, 10, sort, order)
     total_pages = max(1, ceil(total / 10)) if total else 1
     page = min(page, total_pages)
 
@@ -91,11 +91,11 @@ def get_admin_users_params():
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
-def _users_panel(current_user_id: int):
+async def _users_panel(current_user_id: int):
     """Render the users panel (htmx partial / post-action refresh)."""
-    params = get_admin_users_params()
+    params = await get_admin_users_params()
     params["current_user_id"] = current_user_id
-    return template(
+    return await render_template(
         "templates/admin_users.html",
         **params,
         version=config.app_version,
@@ -103,10 +103,10 @@ def _users_panel(current_user_id: int):
     )
 
 
-def _role_options() -> list[dict]:
+async def _role_options() -> list[dict]:
     """Roles for the user form, annotated with whether they need a database."""
     policy = get_policy()
-    counts = count_users_by_role()
+    counts = await count_users_by_role()
     return [
         {
             "name": role,
@@ -117,8 +117,8 @@ def _role_options() -> list[dict]:
     ]
 
 
-def _user_form_context(user, errors):
-    options = _role_options()
+async def _user_form_context(user, errors):
+    options = await _role_options()
     names = [option["name"] for option in options]
     if user:
         selected_role = user["role"]
@@ -140,23 +140,24 @@ def _user_form_context(user, errors):
     }
 
 
-def admin_user_new():
-    return template("templates/admin_user_form.html", **_user_form_context(None, []))
+async def admin_user_new():
+    return await render_template("templates/admin_user_form.html", **await _user_form_context(None, []))
 
 
-def admin_user_create():
-    username = request.forms.get("username", "").strip()
-    password = request.forms.get("password", "")
-    full_name = request.forms.get("full_name", "").strip()
-    role = request.forms.get("role", "user")
-    status = request.forms.get("status", "pending")
-    db_file = request.forms.get("db_file", "").strip()
+async def admin_user_create():
+    form = await request.form
+    username = form.get("username", "").strip()
+    password = form.get("password", "")
+    full_name = form.get("full_name", "").strip()
+    role = form.get("role", "user")
+    status = form.get("status", "pending")
+    db_file = form.get("db_file", "").strip()
 
     policy = get_policy()
     errors = []
     if not username:
         errors.append("Username required")
-    if get_user(username):
+    if await get_user(username):
         errors.append("Username already exists")
     if not password:
         errors.append("Password required")
@@ -172,43 +173,44 @@ def admin_user_create():
         errors.append("Database file required")
 
     if errors:
-        return template(
-            "templates/admin_user_form.html", **_user_form_context(None, errors)
+        return await render_template(
+            "templates/admin_user_form.html", **await _user_form_context(None, errors)
         )
 
     # Only roles that read meter data carry a database file.
     db_value = db_file if policy.role_needs_db(role) else ""
     try:
-        create_user(username, password, full_name, role, db_value, status)
+        await create_user(username, password, full_name, role, db_value, status)
     except Exception as e:
-        return template(
-            "templates/admin_user_form.html", **_user_form_context(None, [str(e)])
+        return await render_template(
+            "templates/admin_user_form.html", **await _user_form_context(None, [str(e)])
         )
 
     if request.headers.get("HX-Request"):
-        return _users_panel(request.user["id"])
+        return await _users_panel(request.user["id"])
 
     return redirect("/admin/users")
 
 
-def admin_user_edit(user_id: int):
-    user = get_user_by_id(user_id)
+async def admin_user_edit(user_id: int):
+    user = await get_user_by_id(user_id)
     if not user:
         return redirect("/admin/users")
-    return template(
-        "templates/admin_user_form.html", **_user_form_context(user, [])
+    return await render_template(
+        "templates/admin_user_form.html", **await _user_form_context(user, [])
     )
 
 
-def admin_user_update(user_id: int):
-    user = get_user_by_id(user_id)
+async def admin_user_update(user_id: int):
+    user = await get_user_by_id(user_id)
     if not user:
         return redirect("/admin/users")
 
-    full_name = request.forms.get("full_name", "").strip()
-    role = request.forms.get("role", "user")
-    status = request.forms.get("status", "pending")
-    db_file = request.forms.get("db_file", "").strip()
+    form = await request.form
+    full_name = form.get("full_name", "").strip()
+    role = form.get("role", "user")
+    status = form.get("status", "pending")
+    db_file = form.get("db_file", "").strip()
 
     policy = get_policy()
     errors = []
@@ -227,9 +229,9 @@ def admin_user_update(user_id: int):
         errors.append("Database file required")
 
     if errors:
-        return template(
+        return await render_template(
             "templates/admin_user_form.html",
-            **_user_form_context(user, errors),
+            **await _user_form_context(user, errors),
         )
 
     update_kwargs = {"full_name": full_name, "role": role, "status": status}
@@ -237,15 +239,15 @@ def admin_user_update(user_id: int):
     # value alone when moving to a role that does not need one.
     if policy.role_needs_db(role):
         update_kwargs["db_file"] = db_file
-    update_user(user_id, **update_kwargs)
+    await update_user(user_id, **update_kwargs)
 
     if request.headers.get("HX-Request"):
-        return _users_panel(request.user["id"])
+        return await _users_panel(request.user["id"])
 
     return redirect("/admin/users")
 
 
-def admin_user_delete(user_id: int):
+async def admin_user_delete(user_id: int):
     """Delete a user. Prevents deleting self.
 
     htmx requests get the refreshed users panel back; plain form posts are
@@ -253,21 +255,22 @@ def admin_user_delete(user_id: int):
     """
     current_user_id = request.user["id"]
     if user_id == current_user_id:
-        response.status = 400
-        return "Cannot delete yourself"
-    delete_user(user_id)
+        resp = await make_response("Cannot delete yourself", 400)
+        return resp
+    await delete_user(user_id)
 
     if request.headers.get("HX-Request"):
-        return _users_panel(current_user_id)
+        return await _users_panel(current_user_id)
 
     return redirect("/admin/users")
+
 
 # ---------------------------------------------------------------------------
 # Roles & permissions
 # ---------------------------------------------------------------------------
-def _roles_context() -> dict:
+async def _roles_context() -> dict:
     policy = get_policy()
-    counts = count_users_by_role()
+    counts = await count_users_by_role()
     roles = []
     for name in policy.roles():
         permissions = policy.role_permissions(name)
@@ -290,21 +293,21 @@ def _roles_context() -> dict:
     return {"roles": roles}
 
 
-def _roles_panel():
+async def _roles_panel():
     """Render the roles panel (htmx partial / post-action refresh)."""
-    ctx = _roles_context()
+    ctx = await _roles_context()
     ctx.update(version=config.app_version, db_name=config.db_file.name)
-    return template("templates/admin_roles.html", **ctx)
+    return await render_template("templates/admin_roles.html", **ctx)
 
 
-def admin_roles():
-    ctx = _roles_context()
+async def admin_roles():
+    ctx = await _roles_context()
     ctx.update(version=config.app_version, db_name=config.db_file.name)
 
     if request.headers.get("HX-Request"):
-        return template("templates/admin_roles.html", **ctx)
+        return await render_template("templates/admin_roles.html", **ctx)
 
-    return template(
+    return await render_template(
         "templates/base.html",
         initial_tab="admin_roles",
         user=request.user,
@@ -312,13 +315,14 @@ def admin_roles():
     )
 
 
-def admin_roles_partial():
+async def admin_roles_partial():
     """Partial render for htmx tab navigation."""
-    return _roles_panel()
+    return await _roles_panel()
 
 
-def _role_permissions_from_form() -> list[tuple[str, str]]:
-    values = request.forms.getall("permissions") or []
+async def _role_permissions_from_form() -> list[tuple[str, str]]:
+    form = await request.form
+    values = form.getlist("permissions") or []
     grants = []
     for value in values:
         resource, sep, action = value.partition(":")
@@ -367,15 +371,16 @@ def _role_form_context(
     }
 
 
-def admin_role_new():
-    return template("templates/admin_role_form.html", **_role_form_context())
+async def admin_role_new():
+    return await render_template("templates/admin_role_form.html", **_role_form_context())
 
 
-def admin_role_create():
+async def admin_role_create():
+    form = await request.form
     policy = get_policy()
-    role = request.forms.get("role", "").strip().lower()
-    home = request.forms.get("home", "").strip() or "/app/dashboard"
-    grants = _role_permissions_from_form()
+    role = form.get("role", "").strip().lower()
+    home = form.get("home", "").strip() or "/app/dashboard"
+    grants = await _role_permissions_from_form()
     selected = {f"{resource}:{action}" for resource, action in grants}
 
     errors = []
@@ -390,7 +395,7 @@ def admin_role_create():
         errors.extend(_validate_home(home, grants))
 
     if errors:
-        return template(
+        return await render_template(
             "templates/admin_role_form.html",
             **_role_form_context(
                 role_name=role, home=home, selected=selected, errors=errors
@@ -400,7 +405,7 @@ def admin_role_create():
     try:
         policy.upsert_role(role, grants, home)
     except ValueError as e:
-        return template(
+        return await render_template(
             "templates/admin_role_form.html",
             **_role_form_context(
                 role_name=role, home=home, selected=selected, errors=[str(e)]
@@ -408,16 +413,16 @@ def admin_role_create():
         )
 
     if request.headers.get("HX-Request"):
-        return _roles_panel()
+        return await _roles_panel()
 
     return redirect("/admin/roles")
 
 
-def admin_role_edit(role: str):
+async def admin_role_edit(role: str):
     policy = get_policy()
     if role not in policy.roles():
         return redirect("/admin/roles")
-    return template(
+    return await render_template(
         "templates/admin_role_form.html",
         **_role_form_context(
             role=role,
@@ -427,13 +432,14 @@ def admin_role_edit(role: str):
     )
 
 
-def admin_role_update(role: str):
+async def admin_role_update(role: str):
+    form = await request.form
     policy = get_policy()
     if role not in policy.roles():
         return redirect("/admin/roles")
 
-    home = request.forms.get("home", "").strip() or "/app/dashboard"
-    grants = _role_permissions_from_form()
+    home = form.get("home", "").strip() or "/app/dashboard"
+    grants = await _role_permissions_from_form()
     selected = {f"{resource}:{action}" for resource, action in grants}
 
     errors = _validate_grants(grants)
@@ -450,7 +456,7 @@ def admin_role_update(role: str):
         )
 
     if errors:
-        return template(
+        return await render_template(
             "templates/admin_role_form.html",
             **_role_form_context(
                 role=role, home=home, selected=selected, errors=errors
@@ -460,7 +466,7 @@ def admin_role_update(role: str):
     try:
         policy.upsert_role(role, grants, home)
     except ValueError as e:
-        return template(
+        return await render_template(
             "templates/admin_role_form.html",
             **_role_form_context(
                 role=role, home=home, selected=selected, errors=[str(e)]
@@ -468,26 +474,26 @@ def admin_role_update(role: str):
         )
 
     if request.headers.get("HX-Request"):
-        return _roles_panel()
+        return await _roles_panel()
 
     return redirect("/admin/roles")
 
 
-def admin_role_delete(role: str):
+async def admin_role_delete(role: str):
     """Delete a role.
 
     htmx requests get the refreshed roles panel back; plain form posts are
     redirected to the role list.
     """
     if role == request.user["role"]:
-        response.status = 400
-        return "Cannot delete the role you are currently using"
-    if count_users_with_role(role) > 0:
-        response.status = 400
-        return "Cannot delete a role that still has users"
+        resp = await make_response("Cannot delete the role you are currently using", 400)
+        return resp
+    if await count_users_with_role(role) > 0:
+        resp = await make_response("Cannot delete a role that still has users", 400)
+        return resp
     get_policy().delete_role(role)
 
     if request.headers.get("HX-Request"):
-        return _roles_panel()
+        return await _roles_panel()
 
     return redirect("/admin/roles")

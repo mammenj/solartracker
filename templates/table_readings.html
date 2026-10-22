@@ -33,13 +33,13 @@
           {{r.date.strftime('%d/%m/%Y')}}
         </td>
         <td class="p-3 text-amber-400 font-mono">
-          {{f"{r.solar_units:.2f}"}} kWh
+          {{ r.solar_units | format_float }} kWh
         </td>
         <td class="p-3 text-emerald-400 font-mono">
-          {{f"{r.export_units:.2f}"}} kWh
+          {{ r.export_units | format_float }} kWh
         </td>
         <td class="p-3 text-red-400 font-mono">
-          {{f"{r.import_units:.2f}"}} kWh
+          {{ r.import_units | format_float }} kWh
         </td>
       </tr>
       {% endfor %}

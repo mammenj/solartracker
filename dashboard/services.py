@@ -1,7 +1,7 @@
-"""Dashboard service functions for computing periods, totals, chart data, etc."""
+"""Dashboard service functions for computing periods, totals, chart data, etc. (Quart/async version)."""
 
 from math import ceil
-from bottle import request
+from quart import request
 from auth.deps import get_user_store
 from libsolar import EnergyExtrapolator, MeterReading, ReadingPeriod, TotalsDict
 
@@ -26,18 +26,19 @@ PERIOD_SORT_KEYS = {
 }
 
 
-def get_periods() -> list[ReadingPeriod]:
+async def get_periods() -> list[ReadingPeriod]:
     """Get all reading periods from the database."""
-    readings = get_user_store().load_all()
+    store = await get_user_store()
+    readings = await store.load_all()
     return [
         ReadingPeriod(readings[i - 1], readings[i]) for i in range(1, len(readings))
     ]
 
 
-def get_totals(periods: list[ReadingPeriod] | None = None) -> TotalsDict:
+async def get_totals(periods: list[ReadingPeriod] | None = None) -> dict:
     """Calculate totals from all periods (periods computed here if not given)."""
     if periods is None:
-        periods = get_periods()
+        periods = await get_periods()
     return {
         "total_days": sum(p.days for p in periods),
         "total_import": sum(p.import_diff for p in periods),
@@ -48,10 +49,10 @@ def get_totals(periods: list[ReadingPeriod] | None = None) -> TotalsDict:
     }
 
 
-def get_chart_data(periods: list[ReadingPeriod] | None = None):
+async def get_chart_data(periods: list[ReadingPeriod] | None = None):
     """Return chart-ready data for the dashboard energy chart (full dataset)."""
     if periods is None:
-        periods = get_periods()
+        periods = await get_periods()
     points = []
     for p in periods:
         solar = p.solar_yield
@@ -92,20 +93,19 @@ def get_chart_data(periods: list[ReadingPeriod] | None = None):
     return points
 
 
-def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
+async def get_period_display_params(periods: list[ReadingPeriod]) -> dict:
     """
     Build a paged, sorted slice of period rows for display only.
     All calculations (totals, chart) are done on the full `periods` list —
     this only affects what the table shows.
     """
-    from math import ceil
     try:
-        page = max(1, int(request.params.get("page", "1")))
+        page = max(1, int(request.args.get("page", "1")))
     except (ValueError, TypeError):
         page = 1
 
-    sort = request.params.get("sort", "start")
-    order = request.params.get("order", "desc")
+    sort = request.args.get("sort", "start")
+    order = request.args.get("order", "desc")
     if sort not in PERIOD_SORT_KEYS:
         sort = "start"
     if order not in ("asc", "desc"):

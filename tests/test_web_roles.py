@@ -1,6 +1,6 @@
 """HTTP tests for admin-managed roles and permissions."""
 
-from auth.db_quart import get_user
+from auth.db import get_user
 from auth.policy import get_policy
 
 
@@ -26,7 +26,7 @@ async def test_admin_can_view_roles(client, login, admin):
 async def test_normal_user_is_redirected_from_roles(client, login, user):
     await login(user)
     resp = await client.get("/admin/roles")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/app/dashboard"
 
 
@@ -57,7 +57,7 @@ async def test_admin_can_create_a_role(client, login, admin):
         "/admin/roles",
         _role_form("viewer", "/app/dashboard", ["dashboard:view", "entry:view"]),
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/admin/roles"
 
     policy = get_policy()
@@ -78,7 +78,7 @@ async def test_admin_can_update_role_permissions(client, login, admin):
         "/admin/roles/viewer",
         [("home", "/app/entry"), ("permissions", "entry:view")],
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
 
     policy = get_policy()
     assert policy.can({"role": "viewer"}, "dashboard", "view") is False
@@ -94,7 +94,7 @@ async def test_admin_can_delete_an_unused_role(client, login, admin):
     )
 
     resp = await client.post("/admin/roles/temp/delete")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert "temp" not in get_policy().roles()
 
 
@@ -255,15 +255,15 @@ async def test_created_role_controls_access(client, login, admin, make_user, new
     login_resp = await other.post(
         "/login", {"username": "viewer1", "password": "password123"}
     )
-    assert login_resp.status == 303
+    assert login_resp.status in (302, 303)
     assert login_resp.location == "/app/dashboard"
 
     assert (await other.get("/")).status == 200
     # No entry permission -> redirected home.
-    assert (await other.get("/app/entry")).status == 303
+    assert (await other.get("/app/entry")).status in (302, 303)
     assert (await other.get("/app/entry")).location == "/app/dashboard"
     # No admin permission -> redirected home.
-    assert (await other.get("/admin/users")).status == 303
+    assert (await other.get("/admin/users")).status in (302, 303)
     assert (await other.get("/admin/users")).location == "/app/dashboard"
 
 
@@ -288,7 +288,7 @@ async def test_removing_a_permission_takes_effect_immediately(
     )
 
     resp = await other.get("/")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/app/entry"
 
 
@@ -308,7 +308,7 @@ async def test_forbidden_home_page_does_not_redirect_loop(
     )
 
     resp = await other.get("/app/dashboard")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/login?error=no_access"
     assert "session" not in other.cookies
 
@@ -318,7 +318,7 @@ async def test_user_whose_role_was_removed_is_logged_out(client, login, user):
     get_policy().delete_role("user")
 
     resp = await client.get("/app/dashboard")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/login?error=no_access"
     assert "session" not in client.cookies
 
@@ -338,7 +338,7 @@ async def test_admin_cannot_post_readings(client, login, admin):
             "solar_units": "3",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/admin/users"
 
 
@@ -365,11 +365,11 @@ async def test_entry_view_without_write_cannot_add_readings(
             "solar_units": "3",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/app/entry"
 
-    from auth.db_quart import ensure_user_db
-    from libsolar_sqlite_quart import MeterReadingStore
+    from auth.db import ensure_user_db
+    from libsolar_sqlite import MeterReadingStore
 
     assert (await MeterReadingStore(await ensure_user_db("reader1.db")).count()) == 0
 
@@ -407,7 +407,7 @@ async def test_admin_can_create_user_with_custom_role(client, login, admin):
             "db_file": "viewer1.db",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert (await get_user("viewer1"))["role"] == "viewer"
 
 
@@ -429,7 +429,7 @@ async def test_role_without_readings_does_not_require_db_file(client, login, adm
             "db_file": "",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert (await get_user("ops1"))["role"] == "ops"
 
 

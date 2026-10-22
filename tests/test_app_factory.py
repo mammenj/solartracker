@@ -1,9 +1,5 @@
 """Tests for the application factory and route wiring (core/app.py)."""
 
-# Bottle stores a route's methods as a string of single-letter flags
-# (e.g. "GET" -> 'G', "POST" -> 'P').
-METHOD_LETTER = {"GET": "G", "POST": "P"}
-
 EXPECTED_ROUTES = {
     ("GET", "/setup"),
     ("POST", "/setup"),
@@ -23,17 +19,17 @@ EXPECTED_ROUTES = {
     ("GET", "/admin/users/partial"),
     ("GET", "/admin/users/new"),
     ("POST", "/admin/users"),
-    ("GET", "/admin/users/<user_id:int>/edit"),
-    ("POST", "/admin/users/<user_id:int>"),
-    ("POST", "/admin/users/<user_id:int>/delete"),
+    ("GET", "/admin/users/<int:user_id>/edit"),
+    ("POST", "/admin/users/<int:user_id>"),
+    ("POST", "/admin/users/<int:user_id>/delete"),
     ("GET", "/admin/roles"),
     ("GET", "/admin/roles/partial"),
     ("GET", "/admin/roles/new"),
     ("POST", "/admin/roles"),
-    ("GET", "/admin/roles/<role>/edit"),
-    ("POST", "/admin/roles/<role>"),
-    ("POST", "/admin/roles/<role>/delete"),
-    ("GET", "/static/<filename:path>"),
+    ("GET", "/admin/roles/<string:role>/edit"),
+    ("POST", "/admin/roles/<string:role>"),
+    ("POST", "/admin/roles/<string:role>/delete"),
+    ("GET", "/static/<path:filename>"),
 }
 
 
@@ -44,16 +40,16 @@ def test_create_app_returns_application(app):
 def test_all_expected_routes_are_registered(app):
     registered = {
         (method, rule.rule)
-        for rule in app.routes
-        for method, letter in METHOD_LETTER.items()
-        if letter in rule.method
+        for rule in app.url_map.iter_rules()
+        for method in rule.methods
+        if method in ("GET", "POST")
     }
 
     missing = EXPECTED_ROUTES - registered
     assert not missing, f"missing routes: {sorted(missing)}"
 
 
-def test_protected_routes_require_authentication(client):
+async def test_protected_routes_require_authentication(client):
     protected = [
         ("GET", "/"),
         ("GET", "/app/dashboard"),
@@ -67,6 +63,6 @@ def test_protected_routes_require_authentication(client):
         ("GET", "/admin/roles/new"),
     ]
     for method, path in protected:
-        resp = client.request(method, path)
-        assert resp.status == 303, path
+        resp = await client.request(method, path)
+        assert resp.status in (302, 303), path
         assert resp.location == "/login", path

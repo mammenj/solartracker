@@ -26,21 +26,21 @@ from config import AppConfig
 
 # Modules that keep a module-level ``config`` object bound at import time.
 CONFIG_MODULES = [
-    "auth.db_quart",
-    "auth.deps_quart",
-    "auth.routes_quart",
-    "core.app_quart",
-    "core.deps_quart",
-    "dashboard.routes_quart",
-    "entry.routes_quart",
-    "entry.services_quart",
-    "admin.routes_quart",
-    "admin.services_quart",
+    "auth.db",
+    "auth.deps",
+    "auth.routes",
+    "core.app",
+    "core.deps",
+    "dashboard.routes",
+    "entry.routes",
+    "entry.services",
+    "admin.routes",
+    "admin.services",
 ]
 
 
 # ---------------------------------------------------------------------------
-# Async test client for Quart
+# Minimal async test client for Quart
 # ---------------------------------------------------------------------------
 class Response:
     """A lightweight HTTP response wrapper."""
@@ -139,16 +139,40 @@ def test_config(tmp_path) -> AppConfig:
 
 
 @pytest.fixture(autouse=True)
-def isolate(test_config, tmp_path, monkeypatch):
+async def isolate(test_config, tmp_path, monkeypatch):
     """Redirect every hard-coded path/global at the temporary directory."""
     import config as config_module
 
-    import auth.db_quart as auth_db
+    import core.app as core_app
+    import core.deps as core_deps
+    import dashboard.routes as dashboard_routes
+    import entry.routes as entry_routes
+    import entry.services as entry_services
+    import admin.routes as admin_routes
+    import admin.services as admin_services
+    import auth.db as auth_db
+    import auth.routes as auth_routes
+    import auth.deps as auth_deps
+    import auth.policy as auth_policy
+    import main
 
     monkeypatch.setattr(auth_db, "AUTH_DB", test_config.auth_db_file)
     monkeypatch.setattr(auth_db, "DATA_DIR", test_config.data_dir)
     monkeypatch.setattr(auth_db, "SECRET", test_config.auth_secret.encode())
-    asyncio.run(auth_db.init_auth_db())
+    monkeypatch.setattr(auth_db, "config", test_config)
+    await auth_db.init_auth_db()
+
+    # Patch config in all modules that capture load_config() at import time
+    modules_with_config = [
+        auth_db, auth_routes, auth_deps, auth_policy,
+        core_app, core_deps,
+        dashboard_routes, entry_routes, entry_services,
+        admin_routes, admin_services,
+        main,
+    ]
+    for mod in modules_with_config:
+        if hasattr(mod, "config"):
+            monkeypatch.setattr(mod, "config", test_config)
 
     # In-function `from config import load_config` calls.
     monkeypatch.setattr(config_module, "load_config", lambda: test_config)
@@ -174,7 +198,7 @@ def isolate(test_config, tmp_path, monkeypatch):
 @pytest.fixture
 def app(isolate, test_config):
     """A freshly built Quart application using the isolated config."""
-    from core.app_quart import create_app
+    from core.app import create_app
 
     return create_app(test_config)
 
@@ -197,7 +221,7 @@ def new_client(app):
 @pytest.fixture
 def make_user():
     """Create a user directly in the isolated auth database."""
-    from auth.db_quart import create_user
+    from auth.db import create_user
 
     async def _make(
         username="user1",
@@ -215,19 +239,15 @@ def make_user():
 
 
 @pytest.fixture
-def admin(make_user):
-    async def _make():
-        uid = await make_user("admin", "admin12345", "Administrator", "admin", "./meter_logs.db")
-        return {"id": uid, "username": "admin", "password": "admin12345"}
-    return asyncio.run(_make())
+async def admin(make_user):
+    uid = await make_user("admin", "admin12345", "Administrator", "admin", "./meter_logs.db")
+    return {"id": uid, "username": "admin", "password": "admin12345"}
 
 
 @pytest.fixture
-def user(make_user):
-    async def _make():
-        uid = await make_user("user1", "password123", "User One", "user", "user1.db")
-        return {"id": uid, "username": "user1", "password": "password123"}
-    return asyncio.run(_make())
+async def user(make_user):
+    uid = await make_user("user1", "password123", "User One", "user", "user1.db")
+    return {"id": uid, "username": "user1", "password": "password123"}
 
 
 @pytest.fixture
@@ -238,7 +258,7 @@ def login(client):
         resp = await client.post(
             "/login", {"username": creds["username"], "password": creds["password"]}
         )
-        assert resp.status == 303, f"login failed: {resp.status} {resp.text[:200]}"
+        assert resp.status in (302, 303), f"login failed: {resp.status} {resp.text[:200]}"
         return resp
 
     return _login

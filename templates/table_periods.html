@@ -29,17 +29,17 @@
           {{r['end'].strftime('%d.%b.%y')}}
         </td>
         <td class="p-1 font-mono text-slate-400">{{r['days']}}d</td>
-        <td class="p-1 text-red-400 font-mono">{{f"{r['import']:.2f}"}}</td>
+        <td class="p-1 text-red-400 font-mono">{{ r['import'] | format_float }}</td>
         <td class="p-1 text-emerald-400 font-mono">
-          {{f"{r['export']:.2f}"}}
+          {{ r['export'] | format_float }}
         </td>
         <td class="p-1 font-bold font-mono text-emerald-400">
-          {{f"{r['net']:.2f}"}}
+          {{ r['net'] | format_float }}
         </td>
         <td class="p-1 font-bold font-mono text-cyan-400">
-          {{f"{r['consumption']:.2f}"}}
+          {{ r['consumption'] | format_float }}
           <span class="text-slate-500 font-mono text-xs font-sans"
-            >{{f"{r['avg']:.2f}"}}</span
+            >{{ r['avg'] | format_float }}</span
           >
         </td>
       </tr>

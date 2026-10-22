@@ -8,10 +8,7 @@ version = "2.1.0"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "bottle>=0.12.25",
     "bcrypt>=4.1.0",
-    "gunicorn>=26.2.0",
-    "waitress>=3.0.2",
     "casbin>=1.43.0",
     "quart>=0.20.0",
     "aiosqlite>=0.19.0",

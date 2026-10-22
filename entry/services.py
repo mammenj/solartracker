@@ -1,15 +1,15 @@
-"""Entry service functions for reading management."""
+"""Entry service functions for reading management (Quart/async version)."""
 
 from math import ceil
-from bottle import request
+from quart import request
 from auth.deps import get_user_store
-from libsolar import MeterReading, ReadingPeriod, TotalsDict
+from libsolar_sqlite import MeterReadingStore
 from config import load_config
 
 config = load_config()
 
 
-def get_display_params() -> dict:
+async def get_display_params() -> dict:
     """
     Parse paging/sorting query params for the readings list and fetch the page
     from the store (all paging/sorting happens server-side, in Python/SQL).
@@ -18,20 +18,20 @@ def get_display_params() -> dict:
     sort, order, headers.
     """
     from math import ceil
-    from libsolar_sqlite import MeterReadingStore
 
     try:
-        page = max(1, int(request.params.get("page", "1")))
+        page = max(1, int(request.args.get("page", "1")))
     except (ValueError, TypeError):
         page = 1
 
-    sort = request.params.get("sort", "date")
-    order = request.params.get("order", "desc")
+    sort = request.args.get("sort", "date")
+    order = request.args.get("order", "desc")
     sort = sort if sort in MeterReadingStore.SORT_COLUMNS else "date"
     order = order if order in ("asc", "desc") else "desc"
 
     page_size = 10
-    readings, total = get_user_store().load_page(sort, order, page, page_size)
+    store = await get_user_store()
+    readings, total = await store.load_page(sort, order, page, page_size)
     total_pages = max(1, ceil(total / page_size)) if total else 1
 
     return {
@@ -55,9 +55,10 @@ def get_display_params() -> dict:
     }
 
 
-def validate_reading(new_reading) -> tuple[bool, str]:
+async def validate_reading(new_reading) -> tuple[bool, str]:
     """Validate a new reading against the last stored reading."""
-    readings = get_user_store().load_all()
+    store = await get_user_store()
+    readings = await store.load_all()
     if not readings:
         return True, ""
 

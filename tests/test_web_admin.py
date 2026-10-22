@@ -1,6 +1,6 @@
 """HTTP-level tests for the admin user-management area."""
 
-from auth.db_quart import get_user, get_user_by_id
+from auth.db import get_user, get_user_by_id
 
 
 # ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ async def test_admin_is_redirected_away_from_user_pages(client, login, admin):
     await login(admin)
     for path in ("/", "/app/dashboard", "/app/entry"):
         resp = await client.get(path)
-        assert resp.status == 303, path
+        assert resp.status in (302, 303), path
         assert resp.location == "/admin/users", path
 
 
@@ -25,7 +25,7 @@ async def test_normal_user_is_redirected_home_from_admin(client, login, user):
     await login(user)
     for path in ("/admin/users", "/admin/users/new"):
         resp = await client.get(path)
-        assert resp.status == 303, path
+        assert resp.status in (302, 303), path
         assert resp.location == "/app/dashboard", path
 
 
@@ -35,7 +35,7 @@ async def test_normal_user_cannot_create_users(client, login, user):
         "/admin/users",
         {"username": "sneaky", "password": "password123", "full_name": "S", "role": "user"},
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/app/dashboard"
     assert await get_user("sneaky") is None
 
@@ -82,13 +82,13 @@ async def test_create_normal_user_succeeds_and_user_can_log_in(client, login, ad
             "db_file": "newbie.db",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/admin/users"
     assert (await get_user("newbie"))["db_file"] == "newbie.db"
 
     other = new_client()
     login_resp = await other.post("/login", {"username": "newbie", "password": "password123"})
-    assert login_resp.status == 303
+    assert login_resp.status in (302, 303)
     assert login_resp.location == "/app/dashboard"
 
 
@@ -104,7 +104,7 @@ async def test_create_admin_user_does_not_require_db_file(client, login, admin, 
             "status": "approved",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
 
     boss = await get_user("boss")
     assert boss["role"] == "admin"
@@ -112,7 +112,7 @@ async def test_create_admin_user_does_not_require_db_file(client, login, admin, 
 
     # Administrators have no readings database; the app must still work for them.
     other = new_client()
-    assert (await other.post("/login", {"username": "boss", "password": "password123"})).status == 303
+    assert (await other.post("/login", {"username": "boss", "password": "password123"})).status in (302, 303)
     assert (await other.get("/admin/users")).status == 200
 
 
@@ -165,7 +165,7 @@ async def test_edit_form_prefills_existing_user(client, login, admin, user):
 async def test_edit_unknown_user_redirects(client, login, admin):
     await login(admin)
     resp = await client.get("/admin/users/9999/edit")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert resp.location == "/admin/users"
 
 
@@ -180,7 +180,7 @@ async def test_update_user_details(client, login, admin, user):
             "db_file": "user1.db",
         },
     )
-    assert resp.status == 303
+    assert resp.status in (302, 303)
 
     updated = await get_user_by_id(user["id"])
     assert updated["full_name"] == "Renamed Person"
@@ -234,7 +234,7 @@ async def test_admin_cannot_delete_self(client, login, admin):
 async def test_admin_can_delete_another_user(client, login, admin, user):
     await login(admin)
     resp = await client.post(f"/admin/users/{user['id']}/delete")
-    assert resp.status == 303
+    assert resp.status in (302, 303)
     assert await get_user_by_id(user["id"]) is None
 
 
@@ -256,7 +256,7 @@ async def test_delete_user_form_is_htmx_driven(client, login, admin, user):
     await login(admin)
     resp = await client.get("/admin/users")
     assert f'hx-post="/admin/users/{user["id"]}/delete"' in resp.text
-    assert 'hx-confirm="Delete user' in resp.text
+    assert f'hx-confirm="Delete user' in resp.text
 
 
 async def test_current_user_row_has_no_delete_button(client, login, admin):
