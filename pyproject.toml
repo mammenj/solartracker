@@ -13,6 +13,7 @@ dependencies = [
     "gunicorn>=26.2.0",
     "waitress>=3.0.2",
     "casbin>=1.43.0",
+    "quart>=0.20.0",
 ]
 
 [project.scripts]
