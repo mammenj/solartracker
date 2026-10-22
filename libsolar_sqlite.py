@@ -1,24 +1,67 @@
-"""Async SQLite storage for meter readings."""
+"""Async SQLite storage for meter readings.
 
-import aiosqlite
+A :class:`MeterReadingStore` owns a single long-lived ``aiosqlite`` connection
+for its database file.  One store is created per request (and attached to
+``request.store``), so every query made while handling that request reuses the
+same connection instead of opening a new one - and a new worker thread - each
+time.
+
+Because the connection is shared, a :class:`asyncio.Lock` serialises
+read-modify-write sequences (``save_or_update``), so two concurrent requests
+handling the *same* store cannot interleave and see each other's uncommitted
+work.  The connection is opened lazily on first use and is bound to the event
+loop that opened it.
+"""
+
+import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import aiosqlite
+
+_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS meter_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL UNIQUE,
+    import REAL NOT NULL,
+    export REAL NOT NULL,
+    solar_gen REAL NOT NULL,
+    addedon TEXT NOT NULL
+)
+"""
+
+
+def _make_reading(row) -> object:
+    """Build a lightweight MeterReading-like object from a DB row."""
+    return type('Reading', (), {
+        'id': row["id"],
+        'date': datetime.strptime(row["date"], "%Y-%m-%d"),
+        'import_units': row["import"],
+        'export_units': row["export"],
+        'solar_units': row["solar_gen"],
+    })()
+
 
 class MeterReadingStore:
-    """Abstracts SQLite storage for meter readings (async version)."""
+    """Abstracts SQLite storage for meter readings."""
 
     def __init__(self, db_filepath: Path):
         """
-        Initialize the store and create the schema if needed.
+        Initialise the store.
+
+        The underlying connection is opened lazily on first use, so no I/O
+        happens here (which also keeps construction safe outside a running
+        event loop).
 
         Args:
             db_filepath: Path to the SQLite database file.
         """
-
-        self.db_filepath = db_filepath
-        # Schema initialization is lazy - happens on first use
+        self.db_filepath = Path(db_filepath)
+        self._conn: Optional[aiosqlite.Connection] = None
+        self._schema_initialized = False
+        # Serialises read-modify-write sequences on the shared connection.
+        self._write_lock = asyncio.Lock()
 
     # Whitelist of UI sort keys -> SQL columns (prevents SQL injection in ORDER BY)
     SORT_COLUMNS = {
@@ -28,27 +71,32 @@ class MeterReadingStore:
         "import": "import",
     }
 
+    async def _connect(self) -> aiosqlite.Connection:
+        """Return the store's connection, opening it on first use."""
+        if self._conn is None:
+            Path(self.db_filepath).parent.mkdir(parents=True, exist_ok=True)
+            conn = await aiosqlite.connect(self.db_filepath)
+            conn.row_factory = aiosqlite.Row
+            self._conn = conn
+        return self._conn
+
+    async def aclose(self) -> None:
+        """Close the underlying connection, if one is open."""
+        if self._conn is not None:
+            await self._conn.close()
+            self._conn = None
+            self._schema_initialized = False
+
     async def _init_schema(self) -> None:
         """Create the readings table if it doesn't exist."""
-        async with aiosqlite.connect(self.db_filepath) as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS meter_records (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT NOT NULL UNIQUE,
-                    import REAL NOT NULL,
-                    export REAL NOT NULL,
-                    solar_gen REAL NOT NULL,
-                    addedon TEXT NOT NULL
-                )
-                """
-            )
-            await conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
-            await conn.commit()
+        conn = await self._connect()
+        await conn.execute(_SCHEMA_SQL)
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
+        await conn.commit()
 
     async def _ensure_schema(self) -> None:
         """Ensure schema is initialized (lazy initialization)."""
-        if not hasattr(self, '_schema_initialized'):
+        if not self._schema_initialized:
             await self._init_schema()
             self._schema_initialized = True
 
@@ -78,29 +126,17 @@ class MeterReadingStore:
         page_size = max(1, int(page_size))
         offset = (page - 1) * page_size
 
-        async with aiosqlite.connect(self.db_filepath) as conn:
-            total_row = await conn.execute("SELECT COUNT(*) FROM meter_records")
-            total = (await total_row.fetchone())[0]
-            cursor = await conn.execute(
-                "SELECT id, date, import, export, solar_gen FROM meter_records "
-                "ORDER BY %s %s, date ASC LIMIT ? OFFSET ?" % (sort_col, sort_dir),
-                (page_size, offset),
-            )
-            rows = await cursor.fetchall()
+        conn = await self._connect()
+        total_row = await conn.execute("SELECT COUNT(*) FROM meter_records")
+        total = (await total_row.fetchone())[0]
+        cursor = await conn.execute(
+            "SELECT id, date, import, export, solar_gen FROM meter_records "
+            "ORDER BY %s %s, date ASC LIMIT ? OFFSET ?" % (sort_col, sort_dir),
+            (page_size, offset),
+        )
+        rows = await cursor.fetchall()
 
-        readings = []
-        for id, date_str, import_units, export_units, solar_units in rows:
-            # Create a simple object that mimics MeterReading
-            readings.append(
-                type('Reading', (), {
-                    'id': id,
-                    'date': datetime.strptime(date_str, "%Y-%m-%d"),
-                    'import_units': import_units,
-                    'export_units': export_units,
-                    'solar_units': solar_units,
-                })()
-            )
-        return readings, total
+        return [_make_reading(r) for r in rows], total
 
     async def load_all(self) -> list:
         """
@@ -110,23 +146,12 @@ class MeterReadingStore:
             List of MeterReading objects sorted by date.
         """
         await self._ensure_schema()
-        readings = []
-        async with aiosqlite.connect(self.db_filepath) as conn:
-            cursor = await conn.execute(
-                "SELECT id, date, import, export, solar_gen FROM meter_records ORDER BY date ASC"
-            )
-            for row in await cursor.fetchall():
-                id, date_str, import_units, export_units, solar_units = row
-                readings.append(
-                    type('Reading', (), {
-                        'id': id,
-                        'date': datetime.strptime(date_str, "%Y-%m-%d"),
-                        'import_units': import_units,
-                        'export_units': export_units,
-                        'solar_units': solar_units,
-                    })()
-                )
-        return readings
+        conn = await self._connect()
+        cursor = await conn.execute(
+            "SELECT id, date, import, export, solar_gen FROM meter_records ORDER BY date ASC"
+        )
+        rows = await cursor.fetchall()
+        return [_make_reading(r) for r in rows]
 
     async def save_or_update(self, reading) -> bool:
         """
@@ -142,7 +167,8 @@ class MeterReadingStore:
         date_str = reading.date.strftime("%Y-%m-%d")
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-        async with aiosqlite.connect(self.db_filepath) as conn:
+        conn = await self._connect()
+        async with self._write_lock:
             # Check if reading exists for this date
             cursor = await conn.execute(
                 "SELECT id FROM meter_records WHERE date = ?", (date_str,)
@@ -166,22 +192,22 @@ class MeterReadingStore:
                 )
                 await conn.commit()
                 return True
-            else:
-                await conn.execute(
-                    """
-                    INSERT INTO meter_records (date, import, export, solar_gen, addedon)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (
-                        date_str,
-                        reading.import_units,
-                        reading.export_units,
-                        reading.solar_units,
-                        now_str,
-                    ),
-                )
-                await conn.commit()
-                return False
+
+            await conn.execute(
+                """
+                INSERT INTO meter_records (date, import, export, solar_gen, addedon)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    date_str,
+                    reading.import_units,
+                    reading.export_units,
+                    reading.solar_units,
+                    now_str,
+                ),
+            )
+            await conn.commit()
+            return False
 
     async def delete(self, date: datetime) -> bool:
         """
@@ -195,7 +221,8 @@ class MeterReadingStore:
         """
         await self._ensure_schema()
         date_str = date.strftime("%Y-%m-%d")
-        async with aiosqlite.connect(self.db_filepath) as conn:
+        conn = await self._connect()
+        async with self._write_lock:
             cursor = await conn.execute(
                 "DELETE FROM meter_records WHERE date = ?", (date_str,)
             )
@@ -214,34 +241,26 @@ class MeterReadingStore:
         """
         await self._ensure_schema()
         date_str = date.strftime("%Y-%m-%d")
-        async with aiosqlite.connect(self.db_filepath) as conn:
-            cursor = await conn.execute(
-                "SELECT id, date, import, export, solar_gen FROM meter_records WHERE date = ?",
-                (date_str,),
-            )
-            row = await cursor.fetchone()
-        if not row:
-            return None
-        id, date_value, import_units, export_units, solar_units = row
-        return type('Reading', (), {
-            'id': id,
-            'date': datetime.strptime(date_value, "%Y-%m-%d"),
-            'import_units': import_units,
-            'export_units': export_units,
-            'solar_units': solar_units,
-        })()
+        conn = await self._connect()
+        cursor = await conn.execute(
+            "SELECT id, date, import, export, solar_gen FROM meter_records WHERE date = ?",
+            (date_str,),
+        )
+        row = await cursor.fetchone()
+        return _make_reading(row) if row else None
 
     async def count(self) -> int:
         """Get the total number of readings in the database."""
         await self._ensure_schema()
-        async with aiosqlite.connect(self.db_filepath) as conn:
-            cursor = await conn.execute("SELECT COUNT(*) FROM meter_records")
-            row = await cursor.fetchone()
-            return row[0]
+        conn = await self._connect()
+        cursor = await conn.execute("SELECT COUNT(*) FROM meter_records")
+        row = await cursor.fetchone()
+        return row[0]
 
     async def clear_all(self) -> None:
         """Delete all readings from the database."""
         await self._ensure_schema()
-        async with aiosqlite.connect(self.db_filepath) as conn:
+        conn = await self._connect()
+        async with self._write_lock:
             await conn.execute("DELETE FROM meter_records")
             await conn.commit()

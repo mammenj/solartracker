@@ -47,6 +47,16 @@ def create_app(config=None):
     register_entry_routes(app)
     register_admin_routes(app)
 
+    @app.teardown_request
+    async def _close_request_store(exc):
+        """Close the per-request meter-reading store's connection."""
+        store = getattr(request, "store", None)
+        if store is not None:
+            try:
+                await store.aclose()
+            except Exception:
+                pass
+
     # Health check endpoint for testing
     @app.route("/health")
     async def health():

@@ -3,6 +3,7 @@
 import bcrypt
 import hmac
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -18,6 +19,20 @@ SECRET = config.auth_secret.encode()
 
 #: Paths whose meter_records schema has already been provisioned this process.
 _provisioned_dbs: set[Path] = set()
+
+
+@asynccontextmanager
+async def _connect(path: Optional[Path] = None):
+    """Yield a connection with ``Row`` rows enabled.
+
+    Defaults to the auth database; pass ``path`` for a user database.
+    Centralises the connect + ``row_factory`` setup so every query opens its
+    database the same way.  The auth path is resolved at call time so tests can
+    redirect it, and the connection is always closed on exit.
+    """
+    async with aiosqlite.connect(path if path is not None else AUTH_DB) as db:
+        db.row_factory = aiosqlite.Row
+        yield db
 
 # ---------------------------------------------------------------------------
 # Password hashing (sync - bcrypt is CPU-bound, keep sync)
@@ -128,7 +143,7 @@ async def init_auth_db() -> None:
     """Create auth database and schema if not exists."""
     AUTH_DB.parent.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         await db.executescript(SCHEMA)
         try:
             await _migrate_role_constraint(db)
@@ -172,7 +187,7 @@ async def create_user(username: str, password: str, full_name: str, role: str, d
         raise ValueError(f"status must be one of: {', '.join(STATUSES)}")
     pw_hash = hash_password(password)
     now = datetime.now().isoformat()
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         cursor = await db.execute(
             """
             INSERT INTO users (username, password_hash, full_name, role, status, db_file, created_at, updated_at)
@@ -186,8 +201,7 @@ async def create_user(username: str, password: str, full_name: str, role: str, d
 
 async def get_user(username: str) -> Optional[dict]:
     """Get user by username."""
-    async with aiosqlite.connect(AUTH_DB) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect() as db:
         row = await db.execute(
             "SELECT id, username, password_hash, full_name, role, status, db_file, created_at, updated_at "
             "FROM users WHERE username = ?",
@@ -199,8 +213,7 @@ async def get_user(username: str) -> Optional[dict]:
 
 async def get_user_by_id(user_id: int) -> Optional[dict]:
     """Get user by ID."""
-    async with aiosqlite.connect(AUTH_DB) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect() as db:
         row = await db.execute(
             "SELECT id, username, password_hash, full_name, role, status, db_file, created_at, updated_at "
             "FROM users WHERE id = ?",
@@ -219,8 +232,7 @@ async def list_users(page: int = 1, page_size: int = 10, sort: str = "username",
     page_size = max(1, page_size)
     offset = (page - 1) * page_size
 
-    async with aiosqlite.connect(AUTH_DB) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect() as db:
         total_row = await db.execute("SELECT COUNT(*) FROM users")
         total = (await total_row.fetchone())[0]
         rows = await db.execute(
@@ -246,7 +258,7 @@ async def update_user(user_id: int, **fields) -> bool:
     updates["updated_at"] = datetime.now().isoformat()
     set_clause = ", ".join(f"{k} = ?" for k in updates)
     values = list(updates.values()) + [user_id]
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         cursor = await db.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)
         await db.commit()
         return cursor.rowcount > 0
@@ -254,14 +266,14 @@ async def update_user(user_id: int, **fields) -> bool:
 
 async def delete_user(user_id: int) -> bool:
     """Delete a user (admin only, use with caution)."""
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         cursor = await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
         await db.commit()
         return cursor.rowcount > 0
 
 
 async def count_users() -> int:
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         row = await db.execute("SELECT COUNT(*) FROM users")
         row = await row.fetchone()
         return row[0]
@@ -269,7 +281,7 @@ async def count_users() -> int:
 
 async def count_users_by_role() -> dict[str, int]:
     """Return ``{role: user_count}`` for every role currently in use."""
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         rows = await db.execute(
             "SELECT role, COUNT(*) FROM users GROUP BY role"
         )
@@ -279,7 +291,7 @@ async def count_users_by_role() -> dict[str, int]:
 
 async def count_users_with_role(role: str) -> int:
     """Number of users assigned to ``role``."""
-    async with aiosqlite.connect(AUTH_DB) as db:
+    async with _connect() as db:
         row = await db.execute(
             "SELECT COUNT(*) FROM users WHERE role = ?", (role,)
         )
@@ -294,7 +306,7 @@ async def count_users_with_role(role: str) -> int:
 async def provision_user_db(db_path: Path) -> None:
     """Create the meter_records schema in a user's database."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    async with aiosqlite.connect(db_path) as db:
+    async with _connect(db_path) as db:
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS meter_records (
