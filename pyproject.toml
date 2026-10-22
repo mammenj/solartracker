@@ -14,13 +14,18 @@ dependencies = [
     "waitress>=3.0.2",
     "casbin>=1.43.0",
     "quart>=0.20.0",
+    "aiosqlite>=0.19.0",
+    "hypercorn>=0.17.0",
 ]
 
 [project.scripts]
 st = "main:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
