@@ -61,6 +61,12 @@ class Policy:
         self._enforcer: casbin.Enforcer | None = None
         self._homes: dict[str, str] = {}
         self._lock = threading.RLock()
+        #: Memoised ``(role, resource, action) -> bool`` decisions. Casbin's
+        #: ``enforce`` evaluates the matcher expression in Python and costs
+        #: ~100us per call, while a page render asks the same handful of
+        #: questions repeatedly. Cleared on every (re)load, which is the single
+        #: point where the underlying grants can change.
+        self._can_cache: dict[tuple[str, str, str], bool] = {}
         self.reload()
 
     # -- loading / saving --------------------------------------------------
@@ -73,6 +79,8 @@ class Policy:
             self._homes = {
                 role: home for role, home in self._enforcer.get_named_policy("p2")
             }
+            # Grants may have changed; drop every memoised decision.
+            self._can_cache.clear()
 
     def _save(self) -> None:
         """Write the current policy back to ``policy.csv`` atomically."""
@@ -100,10 +108,21 @@ class Policy:
 
     # -- queries -----------------------------------------------------------
     def can(self, user: dict | None, resource: str, action: str) -> bool:
-        """Return True when ``user``'s role may perform ``action`` on ``resource``."""
+        """Return True when ``user``'s role may perform ``action`` on ``resource``.
+
+        Results are memoised per ``(role, resource, action)`` because Casbin's
+        ``enforce`` is comparatively expensive and a single page render asks the
+        same questions many times. The cache is cleared on every reload.
+        """
         if not user:
             return False
-        return bool(self._enforcer.enforce(user["role"], resource, action))
+        key = (user["role"], resource, action)
+        cached = self._can_cache.get(key)
+        if cached is not None:
+            return cached
+        decision = bool(self._enforcer.enforce(key[0], resource, action))
+        self._can_cache[key] = decision
+        return decision
 
     def home_for(self, user: dict | None) -> str:
         """Return the landing page declared for ``user``'s role."""

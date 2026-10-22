@@ -11,6 +11,10 @@ read-modify-write sequences (``save_or_update``), so two concurrent requests
 handling the *same* store cannot interleave and see each other's uncommitted
 work.  The connection is opened lazily on first use and is bound to the event
 loop that opened it.
+
+Schema creation is also memoised process-wide (:data:`_schema_ready`): a store
+is created per request, so without it the ``CREATE TABLE``/``CREATE INDEX``
+statements would re-run on the first query of every request.
 """
 
 import asyncio
@@ -19,6 +23,9 @@ from pathlib import Path
 from typing import Optional
 
 import aiosqlite
+
+#: Resolved db paths whose schema has already been created this process.
+_schema_ready: set[Path] = set()
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS meter_records (
@@ -88,11 +95,20 @@ class MeterReadingStore:
             self._schema_initialized = False
 
     async def _init_schema(self) -> None:
-        """Create the readings table if it doesn't exist."""
+        """Create the readings table if it doesn't exist.
+
+        Skipped entirely once this process has created the schema for the
+        path, so the (idempotent but non-free) DDL does not re-run on the first
+        query of every request.
+        """
+        key = self.db_filepath.resolve()
+        if key in _schema_ready:
+            return
         conn = await self._connect()
         await conn.execute(_SCHEMA_SQL)
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
         await conn.commit()
+        _schema_ready.add(key)
 
     async def _ensure_schema(self) -> None:
         """Ensure schema is initialized (lazy initialization)."""

@@ -156,8 +156,11 @@ async def isolate(test_config, tmp_path, monkeypatch):
     monkeypatch.setattr(auth_db, "DATA_DIR", test_config.data_dir)
     monkeypatch.setattr(auth_db, "SECRET", test_config.auth_secret.encode())
     monkeypatch.setattr(auth_db, "config", test_config)
-    # Provisioning is cached per process; reset so each test provisions afresh.
+    # Provisioning / schema caches are process-wide; reset so each test
+    # provisions afresh against its own temporary directory.
     monkeypatch.setattr(auth_db, "_provisioned_dbs", set())
+    import libsolar_sqlite
+    monkeypatch.setattr(libsolar_sqlite, "_schema_ready", set())
     await auth_db.init_auth_db()
 
     # Patch config in all modules that capture load_config() at import time

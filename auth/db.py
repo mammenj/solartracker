@@ -304,23 +304,21 @@ async def count_users_with_role(role: str) -> int:
 # ---------------------------------------------------------------------------
 
 async def provision_user_db(db_path: Path) -> None:
-    """Create the meter_records schema in a user's database."""
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    async with _connect(db_path) as db:
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS meter_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL UNIQUE,
-                import REAL NOT NULL,
-                export REAL NOT NULL,
-                solar_gen REAL NOT NULL,
-                addedon TEXT NOT NULL
-            )
-        """
-        )
-        await db.execute("CREATE INDEX IF NOT EXISTS idx_date ON meter_records(date)")
-        await db.commit()
+    """Create the meter_records schema in a user's database.
+
+    Delegates to :class:`MeterReadingStore`, which owns the readings schema and
+    its process-wide "already provisioned" cache - so the DDL runs at most once
+    per database regardless of whether provisioning was triggered here or by a
+    store on first use.
+    """
+    from libsolar_sqlite import MeterReadingStore
+
+    store = MeterReadingStore(db_path)
+    try:
+        await store._ensure_schema()
+    finally:
+        await store.aclose()
+
 
 
 async def ensure_user_db(db_file: str) -> Path:
