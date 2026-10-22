@@ -1,10 +1,8 @@
-"""Authentication and user management module (async/aiosqlite version)."""
+"""Authentication and user management module."""
 
 import bcrypt
 import hmac
-import json
 import time
-from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -17,6 +15,9 @@ config = load_config()
 AUTH_DB = Path(config.auth_db_file)
 DATA_DIR = Path(config.data_dir)
 SECRET = config.auth_secret.encode()
+
+#: Paths whose meter_records schema has already been provisioned this process.
+_provisioned_dbs: set[Path] = set()
 
 # ---------------------------------------------------------------------------
 # Password hashing (sync - bcrypt is CPU-bound, keep sync)
@@ -62,18 +63,6 @@ def verify_session(token: str) -> Optional[int]:
         return int(user_id_str)
     except Exception:
         return None
-
-
-# ---------------------------------------------------------------------------
-# Async database connection
-# ---------------------------------------------------------------------------
-
-@asynccontextmanager
-async def get_db():
-    """Get an async database connection."""
-    async with aiosqlite.connect(AUTH_DB) as db:
-        db.row_factory = aiosqlite.Row
-        yield db
 
 
 # ---------------------------------------------------------------------------
@@ -328,6 +317,9 @@ async def ensure_user_db(db_file: str) -> Path:
     Users without an explicit database file (administrators do not log
     readings) fall back to the application's default database, which lives
     in the data directory - never in the project root.
+
+    Provisioning is idempotent (``CREATE ... IF NOT EXISTS``) but not free, so
+    each resolved path is only provisioned once per process.
     """
     db_file = (db_file or "").strip()
     if db_file:
@@ -336,5 +328,7 @@ async def ensure_user_db(db_file: str) -> Path:
             p = DATA_DIR / p
     else:
         p = DATA_DIR / Path(config.db_file).name
-    await provision_user_db(p)
+    if p not in _provisioned_dbs:
+        await provision_user_db(p)
+        _provisioned_dbs.add(p)
     return p

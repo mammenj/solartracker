@@ -1,9 +1,9 @@
-"""Dashboard service functions for computing periods, totals, chart data, etc. (Quart/async version)."""
+"""Dashboard service functions for computing periods, totals, chart data, etc.."""
 
 from math import ceil
 from quart import request
 from auth.deps import get_user_store
-from libsolar import EnergyExtrapolator, MeterReading, ReadingPeriod, TotalsDict
+from libsolar import ReadingPeriod
 
 
 # Sortable fields for the dashboard Period Summaries table

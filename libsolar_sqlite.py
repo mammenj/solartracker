@@ -1,10 +1,9 @@
-"""Async SQLite storage for meter readings (Quart/async version)."""
+"""Async SQLite storage for meter readings."""
 
 import aiosqlite
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from libsolar import MeterReading
 
 
 class MeterReadingStore:
@@ -31,7 +30,6 @@ class MeterReadingStore:
 
     async def _init_schema(self) -> None:
         """Create the readings table if it doesn't exist."""
-        print("db is >> ", Path(self.db_filepath).name)
         async with aiosqlite.connect(self.db_filepath) as conn:
             await conn.execute(
                 """
@@ -92,7 +90,6 @@ class MeterReadingStore:
 
         readings = []
         for id, date_str, import_units, export_units, solar_units in rows:
-            date = datetime.strptime(date_str, "%Y-%m-%d")
             # Create a simple object that mimics MeterReading
             readings.append(
                 type('Reading', (), {
@@ -120,7 +117,6 @@ class MeterReadingStore:
             )
             for row in await cursor.fetchall():
                 id, date_str, import_units, export_units, solar_units = row
-                date = datetime.strptime(date_str, "%Y-%m-%d")
                 readings.append(
                     type('Reading', (), {
                         'id': id,

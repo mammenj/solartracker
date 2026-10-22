@@ -1,4 +1,4 @@
-"""Dashboard routes: /, /app/dashboard, /app/dashboard/partial, /app/dashboard/periods-table, /app/dashboard/chart (Quart version)."""
+"""Dashboard routes: /, /app/dashboard, /app/dashboard/partial, /app/dashboard/periods-table, /app/dashboard/chart."""
 
 import json
 from quart import request, render_template

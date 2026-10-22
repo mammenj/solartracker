@@ -1,4 +1,4 @@
-"""Admin services for user and role management (Quart/async version)."""
+"""Admin services for user and role management."""
 
 from math import ceil
 from quart import request, render_template, redirect, make_response
@@ -22,7 +22,6 @@ from auth.db import (
     update_user,
 )
 from auth.policy import get_policy
-from auth.deps import can as can_async
 from config import load_config
 
 config = load_config()

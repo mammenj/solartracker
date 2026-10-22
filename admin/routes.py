@@ -1,4 +1,4 @@
-"""Admin routes: users and roles/permissions (Quart version)."""
+"""Admin routes: users and roles/permissions."""
 
 from quart import request, render_template
 from auth.deps import requires

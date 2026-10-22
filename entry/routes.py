@@ -1,4 +1,4 @@
-"""Entry routes: /app/entry, /app/entry/partial, /app/entry/readings-table, /readings (Quart version)."""
+"""Entry routes: /app/entry, /app/entry/partial, /app/entry/readings-table, /readings."""
 
 from datetime import datetime
 from quart import request, render_template
@@ -7,7 +7,6 @@ from auth.deps import get_user_store
 from entry.services import (
     get_display_params,
     validate_reading,
-    sortable_headers,
 )
 from config import load_config
 

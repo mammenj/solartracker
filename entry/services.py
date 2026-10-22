@@ -1,4 +1,4 @@
-"""Entry service functions for reading management (Quart/async version)."""
+"""Entry service functions for reading management."""
 
 from math import ceil
 from quart import request
@@ -17,8 +17,6 @@ async def get_display_params() -> dict:
     Returns dict with: readings, total, page, page_size, total_pages,
     sort, order, headers.
     """
-    from math import ceil
-
     try:
         page = max(1, int(request.args.get("page", "1")))
     except (ValueError, TypeError):

@@ -6,7 +6,6 @@ directory through module-level globals that are bound at import time.  The
 suite never touches the real ``auth.db`` or ``data/`` files.
 """
 
-import asyncio
 import sys
 
 # config.load_config() parses sys.argv with argparse, which chokes on pytest's
@@ -16,8 +15,7 @@ sys.argv = ["st"]
 import importlib
 import shutil
 from http.cookies import SimpleCookie
-from io import BytesIO
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -30,7 +28,6 @@ CONFIG_MODULES = [
     "auth.deps",
     "auth.routes",
     "core.app",
-    "core.deps",
     "dashboard.routes",
     "entry.routes",
     "entry.services",
@@ -144,7 +141,6 @@ async def isolate(test_config, tmp_path, monkeypatch):
     import config as config_module
 
     import core.app as core_app
-    import core.deps as core_deps
     import dashboard.routes as dashboard_routes
     import entry.routes as entry_routes
     import entry.services as entry_services
@@ -160,12 +156,14 @@ async def isolate(test_config, tmp_path, monkeypatch):
     monkeypatch.setattr(auth_db, "DATA_DIR", test_config.data_dir)
     monkeypatch.setattr(auth_db, "SECRET", test_config.auth_secret.encode())
     monkeypatch.setattr(auth_db, "config", test_config)
+    # Provisioning is cached per process; reset so each test provisions afresh.
+    monkeypatch.setattr(auth_db, "_provisioned_dbs", set())
     await auth_db.init_auth_db()
 
     # Patch config in all modules that capture load_config() at import time
     modules_with_config = [
         auth_db, auth_routes, auth_deps, auth_policy,
-        core_app, core_deps,
+        core_app,
         dashboard_routes, entry_routes, entry_services,
         admin_routes, admin_services,
         main,

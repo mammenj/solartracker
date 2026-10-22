@@ -1,8 +1,7 @@
-"""Authentication routes: login, logout, setup (Quart/async version)."""
+"""Authentication routes: login, logout, setup."""
 
 from quart import request, redirect, render_template, make_response
 from auth.db import (
-    init_auth_db,
     create_user,
     get_user,
     verify_password,
