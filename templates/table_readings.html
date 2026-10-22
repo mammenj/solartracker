@@ -12,9 +12,9 @@
       class="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 z-10"
     >
       <tr>
-        % for h in headers:
+        {% for h in headers %}
         <th
-          class="p-3 cursor-pointer select-none whitespace-nowrap hover:text-slate-100 {{'text-emerald-400' if h['active'] else ''}}"
+          class="p-3 cursor-pointer select-none whitespace-nowrap hover:text-slate-100 {% if h['active'] %}text-emerald-400{% endif %}"
           hx-get="/app/entry/readings-table"
           hx-vals='{"page": 1, "sort": "{{h['key']}}", "order": "{{h['next_order']}}"}'
           hx-target="#readings-table-content"
@@ -23,11 +23,11 @@
         >
           {{h['label']}}{{h['arrow']}}
         </th>
-        % end
+        {% endfor %}
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-800/50">
-      % for r in readings:
+      {% for r in readings %}
       <tr class="hover:bg-slate-800/30 transition-colors">
         <td class="p-3 font-medium text-slate-200">
           {{r.date.strftime('%d/%m/%Y')}}
@@ -42,14 +42,14 @@
           {{f"{r.import_units:.2f}"}} kWh
         </td>
       </tr>
-      % end
-      % if not readings:
+      {% endfor %}
+      {% if not readings %}
       <tr>
         <td colspan="4" class="p-6 text-center text-slate-500">
           No readings logged yet.
         </td>
       </tr>
-      % end
+      {% endif %}
     </tbody>
   </table>
 
@@ -63,41 +63,41 @@
     <div class="flex items-center gap-1">
       <!-- Prev -->
       <button
-        class="px-2 py-1 rounded {{'bg-slate-800 text-slate-200 hover:bg-slate-700' if page > 1 else 'bg-slate-900 text-slate-600 cursor-not-allowed'}}"
-        % if page > 1:
+        class="px-2 py-1 rounded {% if page > 1 %}bg-slate-800 text-slate-200 hover:bg-slate-700{% else %}bg-slate-900 text-slate-600 cursor-not-allowed{% endif %}"
+        {% if page > 1 %}
         hx-get="/app/entry/readings-table"
         hx-vals='{"page": {{page - 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
         hx-target="#readings-table-content"
         hx-swap="outerHTML"
-        % end
+        {% endif %}
       >
         ‹ Prev
       </button>
 
       <!-- Page numbers -->
-      % for pnum in range(1, total_pages + 1):
+      {% for pnum in range(1, total_pages + 1) %}
       <button
-        class="px-2 py-1 rounded font-mono {{'bg-emerald-600 text-slate-950 font-bold' if pnum == page else 'bg-slate-800 text-slate-300 hover:bg-slate-700'}}"
-        % if pnum != page:
+        class="px-2 py-1 rounded font-mono {% if pnum == page %}bg-emerald-600 text-slate-950 font-bold{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}"
+        {% if pnum != page %}
         hx-get="/app/entry/readings-table"
         hx-vals='{"page": {{pnum}}, "sort": "{{sort}}", "order": "{{order}}"}'
         hx-target="#readings-table-content"
         hx-swap="outerHTML"
-        % end
+        {% endif %}
       >
         {{pnum}}
       </button>
-      % end
+      {% endfor %}
 
       <!-- Next -->
       <button
-        class="px-2 py-1 rounded {{'bg-slate-800 text-slate-200 hover:bg-slate-700' if page < total_pages else 'bg-slate-900 text-slate-600 cursor-not-allowed'}}"
-        % if page < total_pages:
+        class="px-2 py-1 rounded {% if page < total_pages %}bg-slate-800 text-slate-200 hover:bg-slate-700{% else %}bg-slate-900 text-slate-600 cursor-not-allowed{% endif %}"
+        {% if page < total_pages %}
         hx-get="/app/entry/readings-table"
- hx-vals='{"page": {{page + 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
+        hx-vals='{"page": {{page + 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
         hx-target="#readings-table-content"
         hx-swap="outerHTML"
-        % end
+        {% endif %}
       >
         Next ›
       </button>

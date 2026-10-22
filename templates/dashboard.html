@@ -14,7 +14,6 @@
           Total Days
         </div>
         <div class="text-xl sm:text-2xl font-bold text-slate-100 mt-1">
-          <!-- %# len .Overview.Records  -->
           {{ "%2d" % totals['total_days']}}
           <span class="text-xs sm:text-sm font-normal text-slate-400">
             days</span
@@ -35,7 +34,6 @@
           Total Export
         </div>
         <div class="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
-          <!-- %# printf "%.2f" .Overview.TotalExport  -->
           {{ "%.2f" % totals['total_export']}}
           <span class="text-xs sm:text-sm font-normal text-slate-400"
             >kWh
@@ -58,7 +56,6 @@
           Total Import
         </div>
         <div class="text-xl sm:text-2xl font-bold text-red-400 mt-1">
-          <!-- %# printf "%.2f" .Overview.TotalImport  -->
           {{ "%.2f" % totals['total_import']}}
           <span class="text-xs sm:text-sm font-normal text-slate-400">kWh</span>
         </div>
@@ -101,7 +98,6 @@
           Total Solar Generated
         </div>
         <div class="text-xl sm:text-2xl font-bold text-amber-400 mt-1">
-          <!-- %# printf "%.2f" .Overview.TotalSolarGen  -->
           {{ "%.2f" % totals['total_solar']}}
           <span class="text-xs sm:text-sm font-normal text-slate-400">
             kWh</span
@@ -148,7 +144,7 @@
     </div>
 
     <!-- Periods table: server-side paging + column sorting via htmx -->
-    % include("templates/table_periods.html")
+    {% include "table_periods.html" %}
   </div>
 
   <!-- Chart: loaded as a partial only when the dashboard is presented -->
@@ -163,7 +159,4 @@
       Loading charts...
     </div>
   </div>
-
-
-  %# end
 </div>

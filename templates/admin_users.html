@@ -18,9 +18,9 @@
       <table class="w-full text-left text-xs text-slate-300">
         <thead class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10">
           <tr>
-            % for h in headers:
+            {% for h in headers %}
             <th
-              class="p-3 cursor-pointer select-none whitespace-nowrap hover:text-slate-100 {{'text-emerald-400' if h['active'] else ''}}"
+              class="p-3 cursor-pointer select-none whitespace-nowrap hover:text-slate-100 {% if h['active'] %}text-emerald-400{% endif %}"
               hx-get="/admin/users"
               hx-vals='{"page": 1, "sort": "{{h['key']}}", "order": "{{h['next_order']}}"}'
               hx-target="#tab-content"
@@ -29,24 +29,24 @@
             >
               {{h['label']}}{{h['arrow']}}
             </th>
-            % end
+            {% endfor %}
             <th class="p-3">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800/60" id="admin-users-table-body">
-          % for u in users:
+          {% for u in users %}
           <tr class="hover:bg-slate-800/30 transition-colors">
             <td class="p-3 font-medium text-slate-200">{{u['username']}}</td>
             <td class="p-3 text-slate-300">{{u['full_name']}}</td>
             <td class="p-3">
               <span class="px-2 py-0.5 rounded text-xs font-medium
-                {{'bg-emerald-900/30 text-emerald-400' if u['role'] == 'admin' else 'bg-blue-900/30 text-blue-400'}}">
+                {% if u['role'] == 'admin' %}bg-emerald-900/30 text-emerald-400{% else %}bg-blue-900/30 text-blue-400{% endif %}">
                 {{u['role']}}
               </span>
             </td>
             <td class="p-3">
               <span class="px-2 py-0.5 rounded text-xs font-medium
-                {{'bg-emerald-900/30 text-emerald-400' if u['status'] == 'approved' else 'bg-yellow-900/30 text-yellow-400' if u['status'] == 'pending' else 'bg-red-900/30 text-red-400'}}">
+                {% if u['status'] == 'approved' %}bg-emerald-900/30 text-emerald-400{% elif u['status'] == 'pending' %}bg-yellow-900/30 text-yellow-400{% else %}bg-red-900/30 text-red-400{% endif %}">
                 {{u['status']}}
               </span>
             </td>
@@ -61,7 +61,7 @@
               >
                 Edit
               </a>
-              % if u['id'] != current_user_id:
+              {% if u['id'] != current_user_id %}
               <form
                 method="post"
                 action="/admin/users/{{u['id']}}/delete"
@@ -73,34 +73,34 @@
               >
                 <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-medium">Delete</button>
               </form>
-              % end
+              {% endif %}
             </td>
           </tr>
-          % end
-          % if not users:
+          {% endfor %}
+          {% if not users %}
           <tr>
             <td colspan="6" class="p-6 text-center text-slate-500">No users found.</td>
           </tr>
-          % end
+          {% endif %}
         </tbody>
       </table>
     </div>
 
     <!-- Mobile Card View (<md) -->
     <div class="md:hidden overflow-y-auto flex-1 p-2 space-y-2" id="admin-users-mobile">
-      % for u in users:
+      {% for u in users %}
       <div class="bg-slate-950/50 border border-slate-800 rounded-lg p-4">
         <div class="flex items-center justify-between mb-2">
           <span class="font-medium text-slate-200">{{u['username']}}</span>
           <span class="px-2 py-0.5 rounded text-xs font-medium
-            {{'bg-emerald-900/30 text-emerald-400' if u['role'] == 'admin' else 'bg-blue-900/30 text-blue-400'}}">
+            {% if u['role'] == 'admin' %}bg-emerald-900/30 text-emerald-400{% else %}bg-blue-900/30 text-blue-400{% endif %}">
             {{u['role']}}
           </span>
         </div>
         <div class="text-sm text-slate-300 mb-1">{{u['full_name']}}</div>
         <div class="flex items-center gap-2 text-xs mb-2">
           <span class="px-2 py-0.5 rounded font-medium
-            {{'bg-emerald-900/30 text-emerald-400' if u['status'] == 'approved' else 'bg-yellow-900/30 text-yellow-400' if u['status'] == 'pending' else 'bg-red-900/30 text-red-400'}}">
+            {% if u['status'] == 'approved' %}bg-emerald-900/30 text-emerald-400{% elif u['status'] == 'pending' %}bg-yellow-900/30 text-yellow-400{% else %}bg-red-900/30 text-red-400{% endif %}">
             {{u['status']}}
           </span>
           <span class="text-slate-500 font-mono">{{u['created_at'][:10]}}</span>
@@ -115,7 +115,7 @@
           >
             Edit
           </a>
-          % if u['id'] != current_user_id:
+          {% if u['id'] != current_user_id %}
           <form
             method="post"
             action="/admin/users/{{u['id']}}/delete"
@@ -127,13 +127,13 @@
           >
             <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-medium">Delete</button>
           </form>
-          % end
+          {% endif %}
         </div>
       </div>
-      % end
-      % if not users:
+      {% endfor %}
+      {% if not users %}
       <div class="text-center text-slate-500 py-6">No users found.</div>
-      % end
+      {% endif %}
     </div>
 
     <!-- Pagination (shared, works for both views) -->
@@ -141,33 +141,33 @@
       <span class="font-mono whitespace-nowrap">{{total}} users · Page {{page}} of {{total_pages}}</span>
       <div class="flex items-center gap-1">
         <button
-          class="px-2 py-1 rounded {{'bg-slate-800 text-slate-200 hover:bg-slate-700' if page > 1 else 'bg-slate-900 text-slate-600 cursor-not-allowed'}}"
-          % if page > 1:
+          class="px-2 py-1 rounded {% if page > 1 %}bg-slate-800 text-slate-200 hover:bg-slate-700{% else %}bg-slate-900 text-slate-600 cursor-not-allowed{% endif %}"
+          {% if page > 1 %}
           hx-get="/admin/users"
           hx-vals='{"page": {{page - 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
           hx-target="#tab-content"
           hx-swap="innerHTML"
-          % end
+          {% endif %}
         >‹ Prev</button>
-        % for pnum in range(1, total_pages + 1):
+        {% for pnum in range(1, total_pages + 1) %}
         <button
-          class="px-2 py-1 rounded font-mono {{'bg-emerald-600 text-slate-950 font-bold' if pnum == page else 'bg-slate-800 text-slate-300 hover:bg-slate-700'}}"
-          % if pnum != page:
+          class="px-2 py-1 rounded font-mono {% if pnum == page %}bg-emerald-600 text-slate-950 font-bold{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}"
+          {% if pnum != page %}
           hx-get="/admin/users"
           hx-vals='{"page": {{pnum}}, "sort": "{{sort}}", "order": "{{order}}"}'
           hx-target="#tab-content"
           hx-swap="innerHTML"
-          % end
+          {% endif %}
         >{{pnum}}</button>
-        % end
+        {% endfor %}
         <button
-          class="px-2 py-1 rounded {{'bg-slate-800 text-slate-200 hover:bg-slate-700' if page < total_pages else 'bg-slate-900 text-slate-600 cursor-not-allowed'}}"
-          % if page < total_pages:
+          class="px-2 py-1 rounded {% if page < total_pages %}bg-slate-800 text-slate-200 hover:bg-slate-700{% else %}bg-slate-900 text-slate-600 cursor-not-allowed{% endif %}"
+          {% if page < total_pages %}
           hx-get="/admin/users"
           hx-vals='{"page": {{page + 1}}, "sort": "{{sort}}", "order": "{{order}}"}'
           hx-target="#tab-content"
           hx-swap="innerHTML"
-          % end
+          {% endif %}
         >Next ›</button>
       </div>
     </div>

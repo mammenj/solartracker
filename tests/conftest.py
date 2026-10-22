@@ -6,6 +6,7 @@ directory through module-level globals that are bound at import time.  The
 suite never touches the real ``auth.db`` or ``data/`` files.
 """
 
+import asyncio
 import sys
 
 # config.load_config() parses sys.argv with argparse, which chokes on pytest's
@@ -19,34 +20,34 @@ from io import BytesIO
 from urllib.parse import urlencode, urlsplit
 
 import pytest
-from wsgiref.util import setup_testing_defaults
 
 from config import AppConfig
 
+
 # Modules that keep a module-level ``config`` object bound at import time.
 CONFIG_MODULES = [
-    "auth.db",
-    "auth.deps",
-    "auth.routes",
-    "core.app",
-    "core.deps",
-    "dashboard.routes",
-    "entry.routes",
-    "entry.services",
-    "admin.routes",
-    "admin.services",
+    "auth.db_quart",
+    "auth.deps_quart",
+    "auth.routes_quart",
+    "core.app_quart",
+    "core.deps_quart",
+    "dashboard.routes_quart",
+    "entry.routes_quart",
+    "entry.services_quart",
+    "admin.routes_quart",
+    "admin.services_quart",
 ]
 
 
 # ---------------------------------------------------------------------------
-# Minimal WSGI test client (no third-party dependency)
+# Async test client for Quart
 # ---------------------------------------------------------------------------
 class Response:
     """A lightweight HTTP response wrapper."""
 
-    def __init__(self, status_line: str, headers: list[tuple[str, str]], body: bytes):
-        self.status = int(status_line.split(" ", 1)[0])
-        self.status_line = status_line
+    def __init__(self, status: int, headers: list[tuple[str, str]], body: bytes):
+        self.status = status
+        self.status_line = f"{status} OK"
         self.headers = headers
         self.text = body.decode("utf-8", "replace")
 
@@ -67,56 +68,44 @@ class Response:
 
 
 class Client:
-    """A tiny cookie-aware WSGI client for exercising the Bottle app."""
+    """A tiny cookie-aware test client for Quart."""
 
     def __init__(self, app):
         self.app = app
         self.cookies: dict[str, str] = {}
+        self._client = app.test_client()
 
-    # -- request helpers ---------------------------------------------------
-    def get(self, path: str, headers: dict | None = None) -> Response:
-        return self.request("GET", path, headers=headers)
+    async def get(self, path: str, headers: dict | None = None) -> Response:
+        return await self.request("GET", path, headers=headers)
 
-    def post(self, path: str, data: dict | None = None, headers: dict | None = None) -> Response:
-        return self.request("POST", path, data=data or {}, headers=headers)
+    async def post(self, path: str, data: dict | None = None, headers: dict | None = None) -> Response:
+        return await self.request("POST", path, data=data or {}, headers=headers)
 
-    def request(self, method: str, path: str, data: dict | None = None, headers: dict | None = None) -> Response:
-        environ = self._build_environ(method, path, data, headers)
-        captured: dict = {}
-
-        def start_response(status, response_headers, exc_info=None):
-            captured["status"] = status
-            captured["headers"] = response_headers
-
-        body = b"".join(self.app(environ, start_response))
-        response = Response(captured["status"], captured["headers"], body)
-        self._store_cookies(response.headers)
-        return response
-
-    # -- internals ---------------------------------------------------------
-    def _build_environ(self, method: str, path: str, data: dict | None, headers: dict | None) -> dict:
-        parts = urlsplit(path)
-        body = urlencode(data).encode() if data is not None else b""
-
-        environ: dict = {}
-        setup_testing_defaults(environ)
-        # Bottle emits 303 redirects for HTTP/1.1 and 302 for HTTP/1.0; browsers
-        # and curl speak 1.1, so the tests should too.
-        environ["SERVER_PROTOCOL"] = "HTTP/1.1"
-        environ["REQUEST_METHOD"] = method.upper()
-        environ["PATH_INFO"] = parts.path or "/"
-        environ["QUERY_STRING"] = parts.query
-        environ["wsgi.input"] = BytesIO(body)
-        environ["CONTENT_LENGTH"] = str(len(body))
-        if data is not None:
-            environ["CONTENT_TYPE"] = "application/x-www-form-urlencoded"
+    async def request(self, method: str, path: str, data: dict | None = None, headers: dict | None = None) -> Response:
+        # Build headers with cookies
+        request_headers = dict(headers or {})
         if self.cookies:
-            environ["HTTP_COOKIE"] = "; ".join(f"{k}={v}" for k, v in self.cookies.items())
-        for key, value in (headers or {}).items():
-            environ["HTTP_" + key.upper().replace("-", "_")] = value
-        return environ
+            cookie_header = "; ".join(f"{k}={v}" for k, v in self.cookies.items())
+            request_headers["Cookie"] = cookie_header
 
-    def _store_cookies(self, headers: list[tuple[str, str]]) -> None:
+        if method == "GET":
+            resp = await self._client.get(path, headers=request_headers)
+        elif method == "POST":
+            if data is not None:
+                from urllib.parse import urlencode
+                body = urlencode(data).encode()
+                request_headers["Content-Type"] = "application/x-www-form-urlencoded"
+            else:
+                body = b""
+            resp = await self._client.post(path, data=body, headers=request_headers)
+        else:
+            raise ValueError(f"Unsupported method: {method}")
+
+        self._store_cookies(resp.headers)
+        body = await resp.get_data()
+        return Response(resp.status_code, list(resp.headers), body)
+
+    def _store_cookies(self, headers):
         for key, value in headers:
             if key.lower() != "set-cookie":
                 continue
@@ -154,12 +143,12 @@ def isolate(test_config, tmp_path, monkeypatch):
     """Redirect every hard-coded path/global at the temporary directory."""
     import config as config_module
 
-    import auth.db as auth_db
+    import auth.db_quart as auth_db
 
     monkeypatch.setattr(auth_db, "AUTH_DB", test_config.auth_db_file)
     monkeypatch.setattr(auth_db, "DATA_DIR", test_config.data_dir)
     monkeypatch.setattr(auth_db, "SECRET", test_config.auth_secret.encode())
-    auth_db.init_auth_db()
+    asyncio.run(auth_db.init_auth_db())
 
     # In-function `from config import load_config` calls.
     monkeypatch.setattr(config_module, "load_config", lambda: test_config)
@@ -184,8 +173,8 @@ def isolate(test_config, tmp_path, monkeypatch):
 
 @pytest.fixture
 def app(isolate, test_config):
-    """A freshly built Bottle application using the isolated config."""
-    from core.app import create_app
+    """A freshly built Quart application using the isolated config."""
+    from core.app_quart import create_app
 
     return create_app(test_config)
 
@@ -208,9 +197,9 @@ def new_client(app):
 @pytest.fixture
 def make_user():
     """Create a user directly in the isolated auth database."""
-    from auth.db import create_user
+    from auth.db_quart import create_user
 
-    def _make(
+    async def _make(
         username="user1",
         password="password123",
         full_name="User One",
@@ -220,29 +209,33 @@ def make_user():
     ) -> int:
         if db_file is None:
             db_file = f"{username}.db"
-        return create_user(username, password, full_name, role, db_file, status)
+        return await create_user(username, password, full_name, role, db_file, status)
 
     return _make
 
 
 @pytest.fixture
 def admin(make_user):
-    uid = make_user("admin", "admin12345", "Administrator", "admin", "./meter_logs.db")
-    return {"id": uid, "username": "admin", "password": "admin12345"}
+    async def _make():
+        uid = await make_user("admin", "admin12345", "Administrator", "admin", "./meter_logs.db")
+        return {"id": uid, "username": "admin", "password": "admin12345"}
+    return asyncio.run(_make())
 
 
 @pytest.fixture
 def user(make_user):
-    uid = make_user("user1", "password123", "User One", "user", "user1.db")
-    return {"id": uid, "username": "user1", "password": "password123"}
+    async def _make():
+        uid = await make_user("user1", "password123", "User One", "user", "user1.db")
+        return {"id": uid, "username": "user1", "password": "password123"}
+    return asyncio.run(_make())
 
 
 @pytest.fixture
 def login(client):
     """Log the given credential dict in through the login form."""
 
-    def _login(creds: dict):
-        resp = client.post(
+    async def _login(creds: dict):
+        resp = await client.post(
             "/login", {"username": creds["username"], "password": creds["password"]}
         )
         assert resp.status == 303, f"login failed: {resp.status} {resp.text[:200]}"

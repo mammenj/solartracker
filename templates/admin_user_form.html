@@ -1,6 +1,6 @@
 <div class="min-h-0 flex-1 flex flex-col gap-4">
   <div class="flex items-center justify-between mb-4 shrink-0">
-    <h2 class="text-xs sm:text-sm font-semibold text-slate-200">{{ 'Edit User' if user else 'Create User' }}</h2>
+    <h2 class="text-xs sm:text-sm font-semibold text-slate-200">{% if user %}Edit User{% else %}Create User{% endif %}</h2>
     <a
       href="/admin/users"
       hx-get="/admin/users/partial"
@@ -13,30 +13,30 @@
   </div>
 
   <div class="bg-slate-900 border border-slate-800 rounded-lg p-6 flex-1 max-w-md" x-data="{ role: '{{ selected_role }}', needsDb: {{ needs_db_roles }} }">
-    % if errors:
+    {% if errors %}
     <div class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-300 text-sm space-y-1">
-      % for e in errors:
+      {% for e in errors %}
       <div>• {{e}}</div>
-      % end
+      {% endfor %}
     </div>
-    % end
+    {% endif %}
 
     <form
       method="post"
-      action="{{ '/admin/users' if not user else '/admin/users/' + str(user['id']) }}"
-      hx-post="{{ '/admin/users' if not user else '/admin/users/' + str(user['id']) }}"
+      action="{% if user %}/admin/users/{{user['id']}}{% else %}/admin/users{% endif %}"
+      hx-post="{% if user %}/admin/users/{{user['id']}}{% else %}/admin/users{% endif %}"
       hx-target:inherited="#tab-content"
       hx-swap:inherited="innerHTML"
       class="space-y-4"
     >
-      <input type="hidden" name="_method" value="{{ 'PUT' if user else 'POST' }}">
+      <input type="hidden" name="_method" value="{% if user %}PUT{% else %}POST{% endif %}">
 
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
-        % if user:
+        {% if user %}
         <input type="text" value="{{user['username']}}" readonly class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-500 cursor-not-allowed" />
         <input type="hidden" name="username" value="{{user['username']}}" />
-        % else:
+        {% else %}
         <input
           type="text"
           name="username"
@@ -44,10 +44,10 @@
           autocomplete="username"
           class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
         />
-        % end
+        {% endif %}
       </div>
 
-      % if not user:
+      {% if not user %}
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
         <input
@@ -59,7 +59,7 @@
         />
         <p class="text-[10px] text-slate-500 mt-1">Minimum 8 characters</p>
       </div>
-      % end
+      {% endif %}
 
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
@@ -75,20 +75,20 @@
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Role</label>
         <select name="role" x-model="role" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
-          % for r in roles:
-          <option value="{{r['name']}}" {{ 'selected' if r['name'] == selected_role else '' }}>
+          {% for r in roles %}
+          <option value="{{r['name']}}" {% if r['name'] == selected_role %}selected{% endif %}>
             {{r['name']}} ({{ 'readings' if r['needs_db'] else 'no readings' }})
           </option>
-          % end
+          {% endfor %}
         </select>
       </div>
 
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
         <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
-          <option value="pending" {{ 'selected' if (user and user['status'] == 'pending') or not user else '' }}>Pending</option>
-          <option value="approved" {{ 'selected' if user and user['status'] == 'approved' else '' }}>Approved</option>
-          <option value="disabled" {{ 'selected' if user and user['status'] == 'disabled' else '' }}>Disabled</option>
+          <option value="pending" {% if (user and user['status'] == 'pending') or not user %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if user and user['status'] == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="disabled" {% if user and user['status'] == 'disabled' %}selected{% endif %}>Disabled</option>
         </select>
         <p class="text-[10px] text-slate-500 mt-1">Only approved users can log in</p>
       </div>
@@ -109,7 +109,7 @@
           type="submit"
           class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold py-2.5 rounded text-sm transition-colors"
         >
-          {{ 'Update' if user else 'Create' }}
+          {% if user %}Update{% else %}Create{% endif %}
         </button>
         <a
           href="/admin/users"

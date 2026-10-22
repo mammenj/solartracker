@@ -1,7 +1,7 @@
 <div class="min-h-0 flex-1 flex flex-col gap-4">
   <div class="flex items-center justify-between mb-4 shrink-0">
     <div>
-      <h2 class="text-xs sm:text-sm font-semibold text-slate-200">Roles &amp; Permissions</h2>
+      <h2 class="text-xs sm:text-sm font-semibold text-slate-200">Roles & Permissions</h2>
       <p class="text-[10px] text-slate-500 font-mono">source: auth/policy.csv</p>
     </div>
     <a
@@ -28,24 +28,24 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800/60">
-          % if not roles:
+          {% if not roles %}
           <tr>
             <td colspan="5" class="p-6 text-center text-slate-500">No roles defined in the policy file.</td>
           </tr>
-          % end
-          % for r in roles:
+          {% endif %}
+          {% for r in roles %}
           <tr class="hover:bg-slate-800/30 transition-colors align-top">
             <td class="p-3 font-medium text-slate-200">{{r['name']}}</td>
             <td class="p-3">
-              % if r['permissions']:
+              {% if r['permissions'] %}
               <div class="flex flex-wrap gap-1">
-                % for p in r['permissions']:
+                {% for p in r['permissions'] %}
                 <span class="px-2 py-0.5 rounded bg-blue-900/30 text-blue-300 text-[10px] font-medium">{{p['label']}}</span>
-                % end
+                {% endfor %}
               </div>
-              % else:
+              {% else %}
               <span class="text-slate-600">No permissions</span>
-              % end
+              {% endif %}
             </td>
             <td class="p-3 font-mono text-slate-400">{{r['home']}}</td>
             <td class="p-3 text-slate-400">{{r['user_count']}}</td>
@@ -60,7 +60,7 @@
                 >
                   Edit
                 </a>
-                % if r['user_count'] == 0:
+                {% if r['user_count'] == 0 %}
                 <form
                   method="post"
                   action="/admin/roles/{{r['name']}}/delete"
@@ -72,13 +72,13 @@
                 >
                   <button type="submit" class="text-red-400 hover:text-red-300 font-medium">Delete</button>
                 </form>
-                % else:
+                {% else %}
                 <span class="text-slate-600" title="Role still has users">Delete</span>
-                % end
+                {% endif %}
               </div>
             </td>
           </tr>
-          % end
+          {% endfor %}
         </tbody>
       </table>
     </div>

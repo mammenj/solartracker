@@ -19,13 +19,13 @@
           <p class="text-slate-500 text-sm mt-1">First-time setup: create administrator account</p>
         </div>
 
-        % if errors:
+        {% if errors %}
         <div class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-300 text-sm space-y-1">
-          % for e in errors:
+          {% for e in errors %}
           <div>• {{e}}</div>
-          % end
+          {% endfor %}
         </div>
-        % end
+        {% endif %}
 
         <form method="post" action="/setup" class="space-y-4">
           <div>
