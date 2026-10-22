@@ -61,6 +61,20 @@ async def test_entry_partial_for_htmx(client, login, user):
     assert "<html" not in resp.text
 
 
+async def test_entry_date_picker_is_prefilled_with_today(client, login, user):
+    """The date input must carry today's ISO date so the native picker opens."""
+    from datetime import datetime
+
+    await login(user)
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    for path in ("/app/entry", "/app/entry/partial"):
+        resp = await client.get(path)
+        assert resp.status == 200
+        assert f'value="{today}"' in resp.text, f"{path} did not prefill the date input"
+        assert 'type="date"' in resp.text
+
+
 async def test_readings_table_empty_state(client, login, user):
     await login(user)
     resp = await client.get("/app/entry/readings-table")

@@ -1,5 +1,6 @@
 """Entry service functions for reading management."""
 
+from datetime import datetime
 from math import ceil
 from quart import request
 from auth.deps import get_user_store
@@ -15,7 +16,7 @@ async def get_display_params() -> dict:
     from the store (all paging/sorting happens server-side, in Python/SQL).
 
     Returns dict with: readings, total, page, page_size, total_pages,
-    sort, order, headers.
+    sort, order, headers, todayDate.
     """
     try:
         page = max(1, int(request.args.get("page", "1")))
@@ -40,6 +41,8 @@ async def get_display_params() -> dict:
         "total_pages": total_pages,
         "sort": sort,
         "order": order,
+        # ``<input type="date">`` needs an ISO (YYYY-MM-DD) value to prefill.
+        "todayDate": datetime.now().strftime("%Y-%m-%d"),
         "headers": sortable_headers(
             sort,
             order,
